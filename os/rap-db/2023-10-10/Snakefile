@@ -44,21 +44,21 @@ rule bwa:
         '''
 
 
-rule gtf:
+rule make_gtf:
     input:
         rules.download.output.gff
     output:
-        "gtf/IRGSP-1.0_representative_transcripts.gtf"
+        "gtf/os.rap-db.make.gtf"
     shell:
         '''
-        gffread {input} -T -o {output}
+        Rscript scripts/make_gtf.R
         '''
 
 
 rule star_index:
     input:
         fa = rules.genome.output.fa,
-        gtf = rules.gtf.output
+        gtf = rules.make_gtf.output
     output:
         star_index = directory("star_index")
     threads:
