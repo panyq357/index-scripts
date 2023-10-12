@@ -1,0 +1,61 @@
+from pathlib import Path
+
+
+rule download:
+    input:
+        "download_links.txt"
+    output:
+        fa = "rawdata/01.SME-HQ-reference.fasta.gz",
+        gff = "rawdata/02.SME-HQ.gff.gz",
+    shell:
+        '''
+        aria2c -i {input} -c -d rawdata
+        '''
+
+
+rule genome:
+    input:
+        rules.download.output.fa
+    output:
+        fa = "genome/sm.eggplant-hq.genome.fa",
+        fai = "genome/sm.eggplant-hq.genome.fa.fai"
+    params:
+        chromosomes = ["E01", "E02", "E03", "E04", "E05", "E06", "E07", "E08", "E09", "E10", "E11", "E12"]
+    shell:
+        '''
+        zcat < {input} > temp.fa
+        samtools faidx temp.fa {params.chromosomes} > {output.fa}
+        samtools faidx {output.fa}
+        rm temp.fa temp.fa.fai
+        '''
+
+
+rule bwa:
+    input:
+        rules.genome.output.fa
+    output:
+        [rules.genome.output.fa + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        '''
+        bwa index {input}
+        '''
+
+
+rule make_gtf:
+    input:
+        rules.download.output.gff
+    output:
+        "gtf/sm.eggplant-hq.make.gtf"
+    shell:
+        '''
+        Rscript scripts/make_gtf.R
+        '''
+
+
+rule all:
+    input:
+        rules.genome.output,
+        rules.bwa.output,
+        rules.make_gtf.output
+
+

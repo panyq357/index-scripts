@@ -1,0 +1,2 @@
+http://eggplant-hq.cn/Eggplant/download/download?name=01.SME-HQ-reference.fasta.gz
+http://eggplant-hq.cn/Eggplant/download/download?name=02.SME-HQ.gff.gz
