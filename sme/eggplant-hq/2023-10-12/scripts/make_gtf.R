@@ -61,3 +61,5 @@ get_gene_id_by_transcript_id <- function(transcript_id, ref_gr) {
     gene_id <- ref_gr$gene_id[match(transcript_id, ref_gr$transcript_id)]
     return(gene_id)
 }
+
+main()
