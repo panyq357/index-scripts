@@ -74,16 +74,27 @@ rule star_index:
             --genomeSAindexNbases 13  # Adjusted base on STAR's warning.
         '''
 
-rule minimap_kasalath:
+
+rule annovar:
     input:
-        rules.download.output.kasalath
+        fa = rules.genome.output.fa,
+        gtf = rules.make_gtf.output
     output:
-        "minimap/kasalath.mmi"
-    threads:
-        20
+        refGene = "osdb/OS_refGene.txt",
+        refGeneMrna = "osdb/OS_refGeneMrna.fa"
     shell:
         '''
-        minimap2 -t {threads} -d {output} {input}
+        mkdir -p osdb
+        gtfToGenePred \
+            -genePredExt \
+            -ignoreGroupsWithoutExons \
+            {input.gtf} \
+            {output.refGene}
+        retrieve_seq_from_fasta.pl \
+            --format refGene \
+            --seqfile {input.fa} \
+            {output.refGene} \
+            --out {output.refGeneMrna}
         '''
 
 
@@ -92,5 +103,5 @@ rule all:
         rules.genome.output,
         rules.bwa.output,
         rules.star_index.output,
-        rules.minimap_kasalath.output
+        rules.annovar.output
 

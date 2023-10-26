@@ -46,24 +46,29 @@ exon$phase <- NA
 exon$score <- NA
 names(exon) <- NULL
 
-# tx_by_gene <- split(transcript, as.character(transcript$gene_id))
-# gene <- unlist(reduce(tx_by_gene))
-# gene$gene_id <- names(gene)
-# names(gene) <- NULL
-# gene$transcript_id <- NA
-# gene$source <- "calculated"
-# gene$type <- "gene"
-# gene$phase <- NA
-# gene$score <- NA
-# 
-# new_gtf <- c(transcript, CDS, five_prime_utr, three_prime_utr, exon, gene)
+tx_by_gene <- split(transcript, as.character(transcript$gene_id))
+gene <- unlist(reduce(tx_by_gene))
+gene$gene_id <- names(gene)
+names(gene) <- NULL
+gene$transcript_id <- NA
+gene$source <- "calculated"
+gene$type <- "gene"
+gene$phase <- NA
+gene$score <- NA
 
-new_gtf <- c(transcript, CDS, five_prime_utr, three_prime_utr, exon)
+new_gtf <- c(transcript, CDS, five_prime_utr, three_prime_utr, exon, gene)
 
 seqlevels(new_gtf) <- sprintf("chr%02d", 1:12)
 new_gtf <- sort(new_gtf, by = ~ width, decreasing=T)
 new_gtf <- sort(new_gtf, by = ~ start, decreasing=F)
 new_gtf <- sort(new_gtf, by = ~ seqnames, decreasing=F)
+
+is_gene_coding <- !is.na(match(as.character(new_gtf$gene_id), as.character(CDS$gene_id)))
+new_gtf$gene_biotype <- "ncRNA"
+new_gtf$gene_biotype[is_gene_coding] <- "protein_coding"
+is_tx_coding <- !is.na(match(as.character(new_gtf$transcript_id), as.character(CDS$transcript_id)))
+new_gtf$transcript_biotype <- "ncRNA"
+new_gtf$transcript_biotype[is_tx_coding] <- "protein_coding"
 
 export(new_gtf, file.path(config$outdir, config$out_gtf), format="gtf")
 
