@@ -3,11 +3,10 @@ library(GenomicRanges)
 
 config <- list(
     gff = "rawdata/IRGSP-1.0_representative/transcripts.gff",
-    outdir = "gtf",
-    out_gtf = "os.rap-db.make.gtf"
+    out_gtf = "results/gtf/os.rap-db.make.gtf"
 )
 
-if (!dir.exists(config$outdir)) dir.create(config$outdir)
+if (!dir.exists(dirname(config$out_gtf))) dir.create(dirname(config$out_gtf))
 
 tx_gff <- rtracklayer::import(config$gff)
 
@@ -70,5 +69,5 @@ is_tx_coding <- !is.na(match(as.character(new_gtf$transcript_id), as.character(C
 new_gtf$transcript_biotype <- "ncRNA"
 new_gtf$transcript_biotype[is_tx_coding] <- "protein_coding"
 
-export(new_gtf, file.path(config$outdir, config$out_gtf), format="gtf")
+export(new_gtf, config$out_gtf, format="gtf")
 

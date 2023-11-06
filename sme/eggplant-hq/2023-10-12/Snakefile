@@ -1,24 +1,17 @@
 from pathlib import Path
 
-
-rule download:
+rule all:
     input:
-        "download_links.txt"
-    output:
-        fa = "rawdata/01.SME-HQ-reference.fasta.gz",
-        gff = "rawdata/02.SME-HQ.gff.gz",
-    shell:
-        '''
-        aria2c -i {input} -c -d rawdata
-        '''
+        bwa = ["results/genome/sm.eggplant-hq.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        gtf = "results/gtf/sm.eggplant-hq.make.gtf"
 
 
 rule genome:
     input:
-        rules.download.output.fa
+        "rawdata/01.SME-HQ-reference.fasta.gz",
     output:
-        fa = "genome/sm.eggplant-hq.genome.fa",
-        fai = "genome/sm.eggplant-hq.genome.fa.fai"
+        fa = "results/genome/sm.eggplant-hq.genome.fa",
+        fai = "results/genome/sm.eggplant-hq.genome.fa.fai"
     params:
         chromosomes = ["E01", "E02", "E03", "E04", "E05", "E06", "E07", "E08", "E09", "E10", "E11", "E12"]
     shell:
@@ -32,9 +25,9 @@ rule genome:
 
 rule bwa:
     input:
-        rules.genome.output.fa
+        "results/genome/sm.eggplant-hq.genome.fa",
     output:
-        [rules.genome.output.fa + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+        ["results/genome/sm.eggplant-hq.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
     shell:
         '''
         bwa index {input}
@@ -43,19 +36,11 @@ rule bwa:
 
 rule make_gtf:
     input:
-        rules.download.output.gff
+        "rawdata/02.SME-HQ.gff.gz",
     output:
-        "gtf/sm.eggplant-hq.make.gtf"
+        "results/gtf/sm.eggplant-hq.make.gtf"
     shell:
         '''
         Rscript scripts/make_gtf.R
         '''
-
-
-rule all:
-    input:
-        rules.genome.output,
-        rules.bwa.output,
-        rules.make_gtf.output
-
 

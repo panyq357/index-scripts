@@ -5,4 +5,5 @@ download_links:
   kasalath: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/kasalath_genome.tar.gz
   annotation: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz
   id_converter: https://rapdb.dna.affrc.go.jp/download/archive/RAP-MSU_2023-09-07.txt.gz
+  protein: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_protein_2023-09-07.fasta.gz
 

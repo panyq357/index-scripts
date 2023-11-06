@@ -4,13 +4,13 @@ library(GenomicRanges)
 config <- list(
     gff = "rawdata/02.SME-HQ.gff.gz",
     chromosomes = sprintf("E%02d", 1:12),
-    outdir = "gtf",
-    out_gtf = "sm.eggplant-hq.make.gtf"
+    out_gtf = "results/gtf/sm.eggplant-hq.make.gtf"
 )
 
-if (!dir.exists(config$outdir)) dir.create(config$outdir)
 
 main <- function() {
+
+    if (!dir.exists(dirname(config$out_gtf))) dir.create(dirname(config$out_gtf))
 
     gff <- rtracklayer::import(config$gff)
 
@@ -49,7 +49,7 @@ main <- function() {
     new_gtf <- sort(new_gtf, by = ~ start, decreasing=F)
     new_gtf <- sort(new_gtf, by = ~ seqnames, decreasing=F)
 
-    export(new_gtf, file.path(config$outdir, config$out_gtf), format="gtf")
+    export(new_gtf, config$out_gtf, format="gtf")
 }
 
 #' Rationale:

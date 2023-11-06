@@ -21,6 +21,6 @@ for line in lines:
         out_lines.append(f"{rap}\t{msu}\n")
 out_lines = sorted(list(set(out_lines)))
 
-with open("id_converter.txt", "wt") as f:
+with open("results/id_converter.txt", "wt") as f:
     f.writelines(out_lines)
 

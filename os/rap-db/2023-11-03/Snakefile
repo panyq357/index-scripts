@@ -4,11 +4,12 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz",
-        ["genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
-        "star_index",
-        ["osdb/OS_refGene.txt", "osdb/OS_refGeneMrna.fa"],
-        "id_converter.txt"
+        anno = "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz",
+        bwa = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        star_index = "results/star_index",
+        annovar = ["results/osdb/OS_refGene.txt", "results/osdb/OS_refGeneMrna.fa"],
+        id_converter = "results/id_converter.txt",
+        diamond = "results/os.rap-db.dmnd"
 
 rule download_genome:
     output:
@@ -52,13 +53,21 @@ rule download_id_converter:
     shell:
         "cd rawdata ; wget {params.url}"
 
+rule download_protein:
+    output:
+        "rawdata/IRGSP-1.0_protein_2023-09-07.fasta.gz"
+    params:
+        url = config["download_links"]["protein"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+
 rule genome:
     input:
         "rawdata/IRGSP-1.0_genome.fasta.gz"
     output:
-        fa = "genome/os.rap-db.genome.fa",
-        fai = "genome/os.rap-db.genome.fa.fai",
-        dict = "genome/os.rap-db.genome.dict"
+        fa = "results/genome/os.rap-db.genome.fa",
+        fai = "results/genome/os.rap-db.genome.fa.fai",
+        dict = "results/genome/os.rap-db.genome.dict"
     shell:
         '''
         gzip -dc {input} > {output.fa}
@@ -68,9 +77,9 @@ rule genome:
 
 rule bwa:
     input:
-        "genome/os.rap-db.genome.fa"
+        "results/genome/os.rap-db.genome.fa"
     output:
-        ["genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+        ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
     shell:
         "bwa index {input}"
 
@@ -78,17 +87,17 @@ rule make_gtf:
     input:
         "rawdata/IRGSP-1.0_representative/transcripts.gff"
     output:
-        "gtf/os.rap-db.make.gtf"
+        "results/gtf/os.rap-db.make.gtf"
     script:
         "scripts/make_gtf.R"
 
 
 rule star_index:
     input:
-        fa = "genome/os.rap-db.genome.fa",
-        gtf = "gtf/os.rap-db.make.gtf"
+        fa = "results/genome/os.rap-db.genome.fa",
+        gtf = "results/gtf/os.rap-db.make.gtf"
     output:
-        star_index = directory("star_index")
+        star_index = directory("results/star_index")
     threads:
         20
     shell:
@@ -108,8 +117,8 @@ rule annovar:
         fa = "genome/os.rap-db.genome.fa",
         gtf = "gtf/os.rap-db.make.gtf"
     output:
-        refGene = "osdb/OS_refGene.txt",
-        refGeneMrna = "osdb/OS_refGeneMrna.fa"
+        refGene = "results/osdb/OS_refGene.txt",
+        refGeneMrna = "results/osdb/OS_refGeneMrna.fa"
     shell:
         '''
         mkdir -p osdb
@@ -129,7 +138,17 @@ rule id_converter:
     input:
         "rawdata/RAP-MSU_2023-09-07.txt.gz"
     output:
-        "id_converter.txt"
+        "results/id_converter.txt"
     script:
         "scripts/id_converter.py"
+
+rule diamond_makedb:
+    input:
+        "rawdata/IRGSP-1.0_protein_2023-09-07.fasta.gz"
+    output:
+        "results/os.rap-db.dmnd"
+    params:
+        d = "results/os.rap-db"
+    shell:
+        "diamond makedb --in {input} -d {params.d}"
 

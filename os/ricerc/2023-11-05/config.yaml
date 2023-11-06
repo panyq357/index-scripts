@@ -1,0 +1,4 @@
+
+rap-db:
+  gtf: "../../rap-db/2023-11-03/results/gtf/os.rap-db.make.gtf"
+  diamond: "../../rap-db/2023-11-03/results/os.rap-db.dmnd"
