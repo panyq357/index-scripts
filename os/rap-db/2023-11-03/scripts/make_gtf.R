@@ -68,6 +68,7 @@ new_gtf$gene_biotype[is_gene_coding] <- "protein_coding"
 is_tx_coding <- !is.na(match(as.character(new_gtf$transcript_id), as.character(CDS$transcript_id)))
 new_gtf$transcript_biotype <- "ncRNA"
 new_gtf$transcript_biotype[is_tx_coding] <- "protein_coding"
+new_gtf$transcript_biotype[new_gtf$type == "gene"] <- NA
 
 export(new_gtf, config$out_gtf, format="gtf")
 
