@@ -1,0 +1,4 @@
+
+rap-db:
+  gtf: "../rap-db/results/gtf/os.rap-db.make.gtf"
+  diamond: "../rap-db/results/os.rap-db.dmnd"

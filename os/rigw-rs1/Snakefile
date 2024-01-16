@@ -1,0 +1,116 @@
+rule all:
+    input:
+        "results/genome/MH63RS1.genome.fa",
+        ["results/genome/MH63RS1.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        "results/diamond/MH63RS1.rap-db.tsv",
+        "results/gtf/MH63RS1.make.gtf",
+        "results/id_converter/MH63RS1.rap-db.best-hit.tsv",
+
+
+rule download_genome:
+    params:
+        url = "http://rice.hzau.edu.cn/rice_rs1/download_ext/MH63RS1.LNNK00000000.fsa.tar.gz"
+    output:
+        "rawdata/MH63RS1.LNNK00000000.fsa"
+    shell:
+        '''
+        mkdir -p rawdata
+        cd rawdata
+        wget {params.url}
+        tar -xzf MH63RS1.LNNK00000000.fsa.tar.gz
+        '''
+
+
+# After downloaded gff, a manual correction in line 1064446 needs to be done.
+# A "\t" before "LOC_Os05g34730.1" needs to be changed to " ".
+rule download_gff:
+    params:
+        url = "http://rice.hzau.edu.cn/rice_rs1/download_ext/MH63_chr.gff.tar.gz"
+    output:
+        "rawdata/MH63_chr_v2.gff"
+    shell:
+        '''
+        mkdir -p rawdata
+        cd rawdata
+        wget {params.url}
+        tar -xzf MH63_chr.gff.tar.gz
+        '''
+
+
+rule download_cds:
+    params:
+        url = "http://rice.hzau.edu.cn/rice_rs1/download_ext/MH63.RS1.CDS.fa.tar.gz"
+    output:
+        "rawdata/MH63.RS1.CDS.fa"
+    shell:
+        '''
+        mkdir -p rawdata
+        cd rawdata
+        wget {params.url}
+        tar -xzf MH63.RS1.CDS.fa.tar.gz
+        '''
+
+
+rule genome:
+    input:
+        "rawdata/MH63RS1.LNNK00000000.fsa"
+    output:
+        fa = "results/genome/MH63RS1.genome.fa",
+        fai = "results/genome/MH63RS1.genome.fa.fai",
+        dict = "results/genome/MH63RS1.genome.dict"
+    params:
+        chromosomes = "Chr{01..12}"
+    shell:
+        '''
+        samtools faidx {input} {params.chromosomes} > {output.fa}
+        samtools faidx {output.fa}
+        gatk CreateSequenceDictionary -R {output.fa}
+        '''
+
+
+rule bwa:
+    input:
+        "results/genome/MH63RS1.genome.fa",
+    output:
+        ["results/genome/MH63RS1.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        "bwa index {input}"
+
+
+rule make_gtf:
+    input:
+        gff = "rawdata/MH63_chr_v2.gff"
+    output:
+        gtf = "results/gtf/MH63RS1.make.gtf"
+    params:
+        chromosomes = ["Chr{:02d}".format(x) for x in range(1, 13)]
+    script:
+        "scripts/make_gtf.R"
+
+
+rule diamond_blastx:
+    input:
+        cds = "rawdata/MH63.RS1.CDS.fa",
+        diamond_db = "../rap-db/results/os.rap-db.dmnd"
+    output:
+        "results/diamond/MH63RS1.rap-db.tsv"
+    shell:
+        '''
+        diamond blastx \
+            -d {input.diamond_db} \
+            -q {input.cds} \
+            -o {output} \
+            --very-sensitive
+        '''
+
+
+rule id_converter:
+    input:
+        diamond_output = "results/diamond/MH63RS1.rap-db.tsv",
+        variety_gtf = "results/gtf/MH63RS1.make.gtf",
+        ref_gtf = "../rap-db/results/gtf/os.rap-db.make.gtf"
+    output:
+        best_hit = "results/id_converter/MH63RS1.rap-db.best-hit.tsv",
+    script:
+        "scripts/id_converter.R"
+

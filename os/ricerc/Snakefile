@@ -1,0 +1,68 @@
+configfile: "config.yaml"
+
+rule all:
+    input:
+        "results/gtf/ZH11.make.gtf",
+        ["results/genome/ZH11.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        "results/diamond/ZH11.rap-db.tsv",
+        "results/id_converter/ZH11.rap-db.best-hit.tsv"
+
+rule genome:
+    input:
+        "rawdata/{variety}.genome.tar.gz"
+    output:
+        fa = "results/genome/{variety}.genome.fa",
+        fai = "results/genome/{variety}.genome.fa.fai",
+        dict = "results/genome/{variety}.genome.dict"
+    shell:
+        '''
+        tar -xzf {input}
+        samtools faidx {wildcards.variety}.genome Chr{{1..12}} > {output.fa}
+        samtools faidx {output.fa}
+        gatk CreateSequenceDictionary -R {output.fa}
+        rm {wildcards.variety}.genome {wildcards.variety}.genome.fai
+        '''
+
+rule bwa:
+    input:
+        "results/genome/{variety}.genome.fa"
+    output:
+        ["results/genome/{variety}.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        "bwa index {input}"
+
+rule make_gtf:
+    input:
+        "rawdata/{variety}.IGDBv1.Allset.gff.tar.gz"
+    output:
+        "results/gtf/{variety}.make.gtf",
+        temp("{variety}/{variety}.IGDBv1.Allset.gff")
+    script:
+        "scripts/make_gtf.R"
+
+rule diamond_blastx:
+    input:
+        cds_tar = "rawdata/{variety}.IGDBv1.Allset.cds.fasta.tar.gz",
+        d = config["rap-db"]["diamond"]
+    output:
+        o = "results/diamond/{variety}.rap-db.tsv",
+        cds_fa = temp("{variety}/{variety}.IGDBv1.Allset.cds.fasta")
+    shell:
+        '''
+        tar -xzf {input.cds_tar}
+        diamond blastx \
+            -d {input.d} \
+            -q {wildcards.variety}/{wildcards.variety}.IGDBv1.Allset.cds.fasta \
+            -o {output.o} \
+            --very-sensitive
+        '''
+
+rule id_converter:
+    input:
+        diamond_output = "results/diamond/{variety}.rap-db.tsv",
+        variety_gtf = "results/gtf/{variety}.make.gtf",
+        ref_gtf = config["rap-db"]["gtf"]
+    output:
+        best_hit = "results/id_converter/{variety}.rap-db.best-hit.tsv",
+    script:
+        "scripts/id_converter.R"

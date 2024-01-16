@@ -1,0 +1,111 @@
+from pathlib import Path
+
+configfile: "config.yaml"
+
+rule all:
+    input:
+        "rawdata/TAIR10_functional_descriptions_20140331.txt",
+        "rawdata/gene_aliases_20140331.txt",
+
+        ["results/genome/at.tair10.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        "results/star_index",
+
+        "results/custom_bed/transcript.bed"
+
+
+rule download_genome:
+    output:
+        "rawdata/TAIR10_chr_all.fas.gz"
+    params:
+        url = config["download_links"]["genome"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+
+
+rule download_gtf:
+    output:
+        "rawdata/Araport11_GTF_genes_transposons.current.gtf.gz"
+    params:
+        url = config["download_links"]["gtf"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+
+
+rule download_alias:
+    output:
+        alias = "rawdata/gene_aliases_20140331.txt"
+    params:
+        url = config["download_links"]["alias"]
+    shell:
+        "cd rawdata ; aria2c {params.url}"
+
+
+rule download_description:
+    output:
+        description = "rawdata/TAIR10_functional_descriptions_20140331.txt"
+    params:
+        url = config["download_links"]["description"]
+    shell:
+        "cd rawdata ; aria2c {params.url}"
+
+
+rule genome:
+    input:
+        "rawdata/TAIR10_chr_all.fas.gz"
+    output:
+        fa = "results/genome/at.tair10.genome.fa",
+        fai = "results/genome/at.tair10.genome.fa.fai",
+        dict = "results/genome/at.tair10.genome.dict"
+    shell:
+        '''
+        gzip -dc {input} | sed -E "s/^>(Chr[12345CM]).*/>\\1/" > {output.fa}
+        samtools faidx {output.fa}
+        gatk CreateSequenceDictionary -R {output.fa}
+        '''
+
+
+rule bwa:
+    input:
+        "results/genome/at.tair10.genome.fa",
+    output:
+        ["results/genome/at.tair10.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        "bwa index {input}"
+
+
+rule make_gtf:
+    input:
+        raw_gtf = "rawdata/Araport11_GTF_genes_transposons.current.gtf.gz"
+    output:
+        new_gtf = "results/gtf/at.araport11.make.gtf"
+    script:
+        "scripts/make_gtf.R"
+
+
+rule star_index:
+    input:
+        fa = "results/genome/at.tair10.genome.fa",
+        gtf = "results/gtf/at.araport11.make.gtf"
+    output:
+        star_index = directory("results/star_index")
+    threads:
+        20
+    shell:
+        '''
+        STAR \
+            --runThreadN {threads} \
+            --runMode genomeGenerate \
+            --genomeDir {output.star_index} \
+            --genomeFastaFiles {input.fa} \
+            --sjdbGTFfile {input.gtf} \
+            --genomeSAindexNbases 12  # Adjusted base on STAR's warning.
+        '''
+
+rule custom_bed:
+    input:
+        gtf = "results/gtf/at.araport11.make.gtf"
+    output:
+        transcript = "results/custom_bed/transcript.bed"
+    script:
+        "scripts/custom_bed.R"
+

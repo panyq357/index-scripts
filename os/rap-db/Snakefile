@@ -1,0 +1,193 @@
+from pathlib import Path
+
+configfile: "config.yaml"
+
+rule all:
+    input:
+        anno = "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz",
+        bwa = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        star_index = "results/star_index",
+        annovar = ["results/osdb/OS_refGene.txt", "results/osdb/OS_refGeneMrna.fa"],
+        id_converter = "results/id_converter.txt",
+        diamond = "results/os.rap-db.dmnd",
+        transcript = "results/custom_bed/transcript.bed",
+        subread_index = "results/subread_index/subread_index.files",
+        hisat2_index = "results/hisat2_index/hisat2_index.1.ht2"
+
+rule download_genome:
+    output:
+        "rawdata/IRGSP-1.0_genome.fasta.gz"
+    params:
+        url = config["download_links"]["genome"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+
+rule download_gff:
+    output:
+        locus = "rawdata/IRGSP-1.0_representative/locus.gff",
+        transcripts = "rawdata/IRGSP-1.0_representative/transcripts.gff",
+        transcripts_exon = "rawdata/IRGSP-1.0_representative/transcripts_exon.gff"
+    params:
+        url = config["download_links"]["gff"]
+    shell:
+        "cd rawdata ; wget {params.url} ; tar -xzf IRGSP-1.0_representative_2023-09-07.tar.gz"
+
+rule download_kasalath:
+    output:
+        "rawdata/kasalath_genome/all.fasta"
+    params:
+        url = config["download_links"]["kasalath"]
+    shell:
+        "cd rawdata ; wget {params.url} ; tar -xzf kasalath_genome.tar.gz"
+
+rule download_annotation:
+    output:
+        "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz"
+    params:
+        url = config["download_links"]["annotation"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+
+rule download_id_converter:
+    output:
+        "rawdata/RAP-MSU_2023-09-07.txt.gz"
+    params:
+        url = config["download_links"]["id_converter"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+
+rule download_protein:
+    output:
+        "rawdata/IRGSP-1.0_protein_2023-09-07.fasta.gz"
+    params:
+        url = config["download_links"]["protein"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+
+rule genome:
+    input:
+        "rawdata/IRGSP-1.0_genome.fasta.gz"
+    output:
+        fa = "results/genome/os.rap-db.genome.fa",
+        fai = "results/genome/os.rap-db.genome.fa.fai",
+        dict = "results/genome/os.rap-db.genome.dict"
+    shell:
+        '''
+        gzip -dc {input} > {output.fa}
+        samtools faidx {output.fa}
+        gatk CreateSequenceDictionary -R {output.fa}
+        '''
+
+rule bwa:
+    input:
+        "results/genome/os.rap-db.genome.fa"
+    output:
+        ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        "bwa index {input}"
+
+rule make_gtf:
+    input:
+        "rawdata/IRGSP-1.0_representative/transcripts.gff"
+    output:
+        "results/gtf/os.rap-db.make.gtf"
+    script:
+        "scripts/make_gtf.R"
+
+
+rule star_index:
+    input:
+        fa = "results/genome/os.rap-db.genome.fa",
+        gtf = "results/gtf/os.rap-db.make.gtf"
+    output:
+        star_index = directory("results/star_index")
+    threads:
+        20
+    shell:
+        '''
+        STAR \
+            --runThreadN {threads} \
+            --runMode genomeGenerate \
+            --genomeDir {output.star_index} \
+            --genomeFastaFiles {input.fa} \
+            --sjdbGTFfile {input.gtf} \
+            --genomeSAindexNbases 13  # Adjusted base on STAR's warning.
+        '''
+
+rule subread_index:
+    input:
+        fa = "results/genome/os.rap-db.genome.fa"
+    output:
+        star_index = "results/subread_index/subread_index.files"
+    params:
+        prefix = "results/subread_index/subread_index"
+    shell:
+        '''
+        subread-buildindex -o {params.prefix} {input.fa}
+        '''
+
+rule hisat2_index:
+    input:
+        fa = "results/genome/os.rap-db.genome.fa"
+    output:
+        hisat2_index = "results/hisat2_index/hisat2_index.1.ht2"
+    params:
+        prefix = "results/hisat2_index/hisat2_index"
+    shell:
+        '''
+        hisat2-build {input.fa} {params.prefix}
+        '''
+
+
+
+
+rule annovar:
+    input:
+        fa = "results/genome/os.rap-db.genome.fa",
+        gtf = "results/gtf/os.rap-db.make.gtf"
+    output:
+        refGene = "results/annovar_osdb/OS_refGene.txt",
+        refGeneMrna = "results/osdb/annovar_OS_refGeneMrna.fa"
+    shell:
+        '''
+        mkdir -p osdb
+        gtfToGenePred \
+            -genePredExt \
+            -ignoreGroupsWithoutExons \
+            {input.gtf} \
+            {output.refGene}
+        retrieve_seq_from_fasta.pl \
+            --format refGene \
+            --seqfile {input.fa} \
+            {output.refGene} \
+            --out {output.refGeneMrna}
+        '''
+
+
+rule id_converter:
+    input:
+        "rawdata/RAP-MSU_2023-09-07.txt.gz"
+    output:
+        "results/id_converter.txt"
+    script:
+        "scripts/id_converter.py"
+
+
+rule diamond_makedb:
+    input:
+        "rawdata/IRGSP-1.0_protein_2023-09-07.fasta.gz"
+    output:
+        "results/os.rap-db.dmnd"
+    params:
+        d = "results/os.rap-db"
+    shell:
+        "diamond makedb --in {input} -d {params.d}"
+
+
+rule custom_bed:
+    input:
+        gtf = "results/gtf/os.rap-db.make.gtf"
+    output:
+        transcript = "results/custom_bed/transcript.bed"
+    script:
+        "scripts/custom_bed.R"
