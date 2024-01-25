@@ -118,7 +118,7 @@ rule subread_index:
     input:
         fa = "results/genome/os.rap-db.genome.fa"
     output:
-        star_index = "results/subread_index/subread_index.files"
+        "results/subread_index/subread_index.files"
     params:
         prefix = "results/subread_index/subread_index"
     shell:

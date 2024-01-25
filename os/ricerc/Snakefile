@@ -1,11 +1,13 @@
 configfile: "config.yaml"
 
+cultivar = ["ZH11", "9311"]
+
 rule all:
     input:
-        "results/gtf/ZH11.make.gtf",
-        ["results/genome/ZH11.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
-        "results/diamond/ZH11.rap-db.tsv",
-        "results/id_converter/ZH11.rap-db.best-hit.tsv"
+        expand("results/gtf/{cultivar}.make.gtf", cultivar=cultivar),
+        expand("results/genome/{cultivar}.genome.fa.{suffix}", cultivar=cultivar, suffix=["amb", "ann", "bwt", "pac", "sa"]),
+        expand("results/diamond/{cultivar}.rap-db.tsv", cultivar=cultivar),
+        expand("results/id_converter/{cultivar}.rap-db.best-hit.tsv", cultivar=cultivar)
 
 rule genome:
     input:
