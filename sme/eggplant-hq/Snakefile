@@ -1,0 +1,46 @@
+from pathlib import Path
+
+rule all:
+    input:
+        bwa = ["results/genome/sm.eggplant-hq.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        gtf = "results/gtf/sm.eggplant-hq.make.gtf"
+
+
+rule genome:
+    input:
+        "rawdata/01.SME-HQ-reference.fasta.gz",
+    output:
+        fa = "results/genome/sm.eggplant-hq.genome.fa",
+        fai = "results/genome/sm.eggplant-hq.genome.fa.fai"
+    params:
+        chromosomes = ["E01", "E02", "E03", "E04", "E05", "E06", "E07", "E08", "E09", "E10", "E11", "E12"]
+    shell:
+        '''
+        zcat < {input} > temp.fa
+        samtools faidx temp.fa {params.chromosomes} > {output.fa}
+        samtools faidx {output.fa}
+        rm temp.fa temp.fa.fai
+        '''
+
+
+rule bwa:
+    input:
+        "results/genome/sm.eggplant-hq.genome.fa",
+    output:
+        ["results/genome/sm.eggplant-hq.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        '''
+        bwa index {input}
+        '''
+
+
+rule make_gtf:
+    input:
+        "rawdata/02.SME-HQ.gff.gz",
+    output:
+        "results/gtf/sm.eggplant-hq.make.gtf"
+    shell:
+        '''
+        Rscript scripts/make_gtf.R
+        '''
+
