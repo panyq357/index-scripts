@@ -1,0 +1,10 @@
+rule all:
+    input:
+        "results/dosa_id_converter.tsv"
+
+rule dosa_id_converter:
+    output:
+        "results/dosa_id_converter.tsv"
+    script:
+        "scripts/dosa_id_converter.py"
+
