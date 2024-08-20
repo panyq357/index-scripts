@@ -1,13 +1,14 @@
-configfile: "config.yaml"
+
 
 cultivar = ["ZH11", "9311"]
+
 
 rule all:
     input:
         expand("results/gtf/{cultivar}.make.gtf", cultivar=cultivar),
         expand("results/genome/{cultivar}.genome.fa.{suffix}", cultivar=cultivar, suffix=["amb", "ann", "bwt", "pac", "sa"]),
-        expand("results/diamond/{cultivar}.rap-db.tsv", cultivar=cultivar),
-        expand("results/id_converter/{cultivar}.rap-db.best-hit.tsv", cultivar=cultivar)
+        expand("results/id_converter/{cultivar}.to.rap-db.best-hit.tsv", cultivar=cultivar)
+
 
 rule genome:
     input:
@@ -33,6 +34,7 @@ rule bwa:
     shell:
         "bwa index {input}"
 
+
 rule make_gtf:
     input:
         "rawdata/{variety}.IGDBv1.Allset.gff.tar.gz"
@@ -42,29 +44,39 @@ rule make_gtf:
     script:
         "scripts/make_gtf.R"
 
-rule diamond_blastx:
+
+rule longest_cds:
     input:
         cds_tar = "rawdata/{variety}.IGDBv1.Allset.cds.fasta.tar.gz",
-        d = config["rap-db"]["diamond"]
     output:
-        o = "results/diamond/{variety}.rap-db.tsv",
-        cds_fa = temp("{variety}/{variety}.IGDBv1.Allset.cds.fasta")
+        longest_cds = "results/longest_cds/{variety}.longest_cds.fa",
+        untar = temp("{variety}/{variety}.IGDBv1.Allset.cds.fasta")
+    script:
+        "scripts/longest_cds.R"
+
+
+rule diamond_blastx:
+    input:
+        longest_cds = "results/longest_cds/{variety}.longest_cds.fa",
+        d = "../rap-db/results/os.rap-db.dmnd"
+    output:
+        o = "results/diamond/{variety}.to.rap-db.tsv",
     shell:
         '''
-        tar -xzf {input.cds_tar}
         diamond blastx \
             -d {input.d} \
-            -q {wildcards.variety}/{wildcards.variety}.IGDBv1.Allset.cds.fasta \
+            -q {input.longest_cds} \
             -o {output.o} \
             --very-sensitive
         '''
 
+
 rule id_converter:
     input:
-        diamond_output = "results/diamond/{variety}.rap-db.tsv",
-        variety_gtf = "results/gtf/{variety}.make.gtf",
-        ref_gtf = config["rap-db"]["gtf"]
+        diamond_output = "results/diamond/{variety}.to.rap-db.tsv",
     output:
-        best_hit = "results/id_converter/{variety}.rap-db.best-hit.tsv",
+        best_hit = "results/id_converter/{variety}.to.rap-db.best-hit.tsv",
     script:
         "scripts/id_converter.R"
+
+

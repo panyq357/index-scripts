@@ -1,6 +1,7 @@
-from pathlib import Path
-
 configfile: "config.yaml"
+
+include: "rules/download.smk"
+include: "rules/id_converter.smk"
 
 rule all:
     input:
@@ -12,57 +13,9 @@ rule all:
         diamond = "results/os.rap-db.dmnd",
         transcript = "results/custom_bed/transcript.bed",
         subread_index = "results/subread_index/subread_index.files",
-        hisat2_index = "results/hisat2_index/hisat2_index.1.ht2"
-
-rule download_genome:
-    output:
-        "rawdata/IRGSP-1.0_genome.fasta.gz"
-    params:
-        url = config["download_links"]["genome"]
-    shell:
-        "cd rawdata ; wget {params.url}"
-
-rule download_gff:
-    output:
-        locus = "rawdata/IRGSP-1.0_representative/locus.gff",
-        transcripts = "rawdata/IRGSP-1.0_representative/transcripts.gff",
-        transcripts_exon = "rawdata/IRGSP-1.0_representative/transcripts_exon.gff"
-    params:
-        url = config["download_links"]["gff"]
-    shell:
-        "cd rawdata ; wget {params.url} ; tar -xzf IRGSP-1.0_representative_2023-09-07.tar.gz"
-
-rule download_kasalath:
-    output:
-        "rawdata/kasalath_genome/all.fasta"
-    params:
-        url = config["download_links"]["kasalath"]
-    shell:
-        "cd rawdata ; wget {params.url} ; tar -xzf kasalath_genome.tar.gz"
-
-rule download_annotation:
-    output:
-        "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz"
-    params:
-        url = config["download_links"]["annotation"]
-    shell:
-        "cd rawdata ; wget {params.url}"
-
-rule download_id_converter:
-    output:
-        "rawdata/RAP-MSU_2023-09-07.txt.gz"
-    params:
-        url = config["download_links"]["id_converter"]
-    shell:
-        "cd rawdata ; wget {params.url}"
-
-rule download_protein:
-    output:
-        "rawdata/IRGSP-1.0_protein_2023-09-07.fasta.gz"
-    params:
-        url = config["download_links"]["protein"]
-    shell:
-        "cd rawdata ; wget {params.url}"
+        hisat2_index = "results/hisat2_index/hisat2_index.1.ht2",
+        kasalath = "rawdata/kasalath_genome/all.fasta",
+        longest_protein = "results/longest_protein.fa"
 
 rule genome:
     input:
@@ -138,9 +91,6 @@ rule hisat2_index:
         hisat2-build {input.fa} {params.prefix}
         '''
 
-
-
-
 rule annovar:
     input:
         fa = "results/genome/os.rap-db.genome.fa",
@@ -164,26 +114,6 @@ rule annovar:
         '''
 
 
-rule id_converter:
-    input:
-        "rawdata/RAP-MSU_2023-09-07.txt.gz"
-    output:
-        "results/id_converter.txt"
-    script:
-        "scripts/id_converter.py"
-
-
-rule diamond_makedb:
-    input:
-        "rawdata/IRGSP-1.0_protein_2023-09-07.fasta.gz"
-    output:
-        "results/os.rap-db.dmnd"
-    params:
-        d = "results/os.rap-db"
-    shell:
-        "diamond makedb --in {input} -d {params.d}"
-
-
 rule custom_bed:
     input:
         gtf = "results/gtf/os.rap-db.make.gtf"
@@ -191,3 +121,4 @@ rule custom_bed:
         transcript = "results/custom_bed/transcript.bed"
     script:
         "scripts/custom_bed.R"
+

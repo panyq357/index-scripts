@@ -1,0 +1,67 @@
+rule all:
+    input:
+        ["results/genome/msa.ZhongmuNo.1.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        "results/gtf/msa.ZhongmuNo.1.make.gtf"
+
+
+rule download:
+    output:
+        "rawdata/12623960.zip"
+    params:
+        url = "https://figshare.com/ndownloader/articles/12623960/versions/1"
+    shell:
+        "cd rawdata ; aria2c {params.url}"
+
+
+rule unzip:
+    output:
+        "rawdata/ZhongmuNo.1.annotation.go",
+        "rawdata/ZhongmuNo.1.annotation.interpro",
+        "rawdata/ZhongmuNo.1.annotation.kegg_pathway",
+        "rawdata/ZhongmuNo.1.annotation.pathway",
+        "rawdata/ZhongmuNo.1.annotation.pfam",
+        "rawdata/ZhongmuNo.1.cds.fasta",
+        "rawdata/ZhongmuNo.1.cds.long.fasta",
+        "rawdata/ZhongmuNo.1_genome.fasta.gz",
+        "rawdata/ZhongmuNo.1.gff",
+        "rawdata/ZhongmuNo.1.pros.fasta",
+        "rawdata/ZhongmuNo.1.pros.long.fasta"
+    shell:
+        "cd rawdata ; unzip 12623960.zip"
+
+
+rule genome:
+    input:
+        "rawdata/ZhongmuNo.1_genome.fasta.gz",
+    output:
+        fa = "results/genome/msa.ZhongmuNo.1.genome.fa",
+        fai = "results/genome/msa.ZhongmuNo.1.genome.fa.fai",
+        dict = "results/genome/msa.ZhongmuNo.1.genome.dict",
+        temp_fa = temp("results/genome/msa.ZhongmuNo.1.genome.fa.temp"),
+        temp_fa_fai = temp("results/genome/msa.ZhongmuNo.1.genome.fa.temp.fai")
+    params:
+        chromosome = [f"Chr{x}" for x in range(1, 9)]
+    shell:
+        '''
+        gzip -dc {input} > {output.temp_fa}
+        samtools faidx {output.temp_fa} {params.chromosome} > {output.fa}
+        samtools faidx {output.fa}
+        gatk CreateSequenceDictionary -R {output.fa}
+        '''
+
+rule bwa:
+    input:
+        "results/genome/msa.ZhongmuNo.1.genome.fa",
+    output:
+        ["results/genome/msa.ZhongmuNo.1.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        "bwa index {input}"
+
+
+rule make_gtf:
+    input:
+        "rawdata/ZhongmuNo.1.gff"
+    output:
+        "results/gtf/msa.ZhongmuNo.1.make.gtf"
+    script:
+        "scripts/make_gtf.R"

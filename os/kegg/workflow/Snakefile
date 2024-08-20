@@ -1,0 +1,22 @@
+rule all:
+    input:
+        pathway_to_description = "results/osa_pathway/pathway_to_description.tsv",
+        pathway_to_rapdb = "results/osa_pathway/pathway_to_rapdb.tsv"
+
+
+rule osa_pathway:
+    output:
+        pathway_to_description = "results/osa_pathway/pathway_to_description.tsv",
+        pathway_to_gene = "results/osa_pathway/pathway_to_gene.tsv"
+    script:
+        "scripts/osa_pathway.py"
+
+
+rule pathway_to_rapdb:
+    input:
+        pathway_to_gene = "results/osa_pathway/pathway_to_gene.tsv",
+        ncbi_to_rapdb = "../ncbi/results/id_converter/ncbi.to.rap-db.best-hit.tsv"
+    output:
+        pathway_to_rapdb = "results/osa_pathway/pathway_to_rapdb.tsv"
+    script:
+        "scripts/pathway_to_rapdb.R"

@@ -1,0 +1,23 @@
+rule all:
+    input:
+        out_gtf = "results/gtf/os.msu.make.gtf"
+
+
+rule download_gff:
+    output:
+        "rawdata/all.gff3"
+    params:
+        url = "http://rice.uga.edu/pub/data/Eukaryotic_Projects/o_sativa/annotation_dbs/pseudomolecules/version_7.0/all.dir/all.gff3"
+    shell:
+        "mkdir -p rawdata ; cd rawdata ; wget {params.url}"
+
+
+rule make_gtf:
+    input:
+        gff = "rawdata/all.gff3"
+    output:
+        out_gtf = "results/gtf/os.msu.make.gtf",
+        out_gtf_rap_chr = "results/gtf/os.msu.make.rap-chr.gtf"
+    script:
+        "scripts/make_gtf.R"
+
