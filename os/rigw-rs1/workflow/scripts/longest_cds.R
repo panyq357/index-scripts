@@ -10,10 +10,7 @@ raw_cds <- readDNAStringSet(config$raw_cds)
 names(raw_cds) <- names(raw_cds) |> sub("([^t]+)t([^\\-]+)-.*", "\\1g\\2", x=_, perl=T)
 
 longest_cds <- split(raw_cds, names(raw_cds)) |>
-    lapply(function(x) {
-        x[which(order(x) == 1)]
-        return(x[1])
-    }) |>
+    lapply(function(x) {x[order(width(x), decreasing=T)][1]}) |>
     unname() |> 
     do.call(c, args=_)
 

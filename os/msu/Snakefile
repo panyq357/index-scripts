@@ -1,6 +1,7 @@
 rule all:
     input:
-        out_gtf = "results/gtf/os.msu.make.gtf"
+        "results/gtf/os.msu.make.gtf",
+        "results/os.msu.dmnd"
 
 
 rule download_gff:
@@ -8,6 +9,15 @@ rule download_gff:
         "rawdata/all.gff3"
     params:
         url = "http://rice.uga.edu/pub/data/Eukaryotic_Projects/o_sativa/annotation_dbs/pseudomolecules/version_7.0/all.dir/all.gff3"
+    shell:
+        "mkdir -p rawdata ; cd rawdata ; wget {params.url}"
+
+
+rule download_protein:
+    output:
+        "rawdata/all.pep"
+    params:
+        url = "http://rice.uga.edu/pub/data/Eukaryotic_Projects/o_sativa/annotation_dbs/pseudomolecules/version_7.0/all.dir/all.pep"
     shell:
         "mkdir -p rawdata ; cd rawdata ; wget {params.url}"
 
@@ -20,4 +30,26 @@ rule make_gtf:
         out_gtf_rap_chr = "results/gtf/os.msu.make.rap-chr.gtf"
     script:
         "scripts/make_gtf.R"
+
+
+# For each gene, keep its longest protein.
+rule longest_protein:
+    input:
+        raw_protein = "rawdata/all.pep"
+    output:
+        longest_protein = "results/longest_protein.fa"
+    script:
+        "scripts/longest_protein.R"
+
+
+# Make a diamond db, so that other assembly can use it to make id conveter.
+rule diamond_makedb:
+    input:
+        "results/longest_protein.fa"
+    output:
+        "results/os.msu.dmnd"
+    params:
+        d = "results/os.msu"
+    shell:
+        "diamond makedb --in {input} -d {params.d}"
 

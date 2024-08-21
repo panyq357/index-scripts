@@ -12,10 +12,7 @@ names(raw_cds) <- names(raw_cds) |> sub(".*\\[gene=([^\\]]+)\\].*", "\\1", x=_, 
 cds <- raw_cds[grep("^LOC", x=names(raw_cds))]
 
 longest_cds <- split(cds, names(cds)) |>
-    sapply(function(x) {
-        x[which(order(x) == 1)]
-        return(x[1])
-    }) |>
+    lapply(function(x) {x[order(width(x), decreasing=T)][1]}) |>
     unname() |> 
     do.call(c, args=_)
 

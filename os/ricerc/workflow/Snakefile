@@ -7,7 +7,7 @@ rule all:
     input:
         expand("results/gtf/{cultivar}.make.gtf", cultivar=cultivar),
         expand("results/genome/{cultivar}.genome.fa.{suffix}", cultivar=cultivar, suffix=["amb", "ann", "bwt", "pac", "sa"]),
-        expand("results/id_converter/{cultivar}.to.rap-db.best-hit.tsv", cultivar=cultivar)
+        expand("results/id_converter/{cultivar}.to.{ref}.best-hit.tsv", cultivar=cultivar, ref=["rap-db", "msu"])
 
 
 rule genome:
@@ -55,7 +55,7 @@ rule longest_cds:
         "scripts/longest_cds.R"
 
 
-rule diamond_blastx:
+rule diamond_blastx_to_rapdb:
     input:
         longest_cds = "results/longest_cds/{variety}.longest_cds.fa",
         d = "../rap-db/results/os.rap-db.dmnd"
@@ -71,11 +71,36 @@ rule diamond_blastx:
         '''
 
 
-rule id_converter:
+rule id_converter_to_rapdb:
     input:
         diamond_output = "results/diamond/{variety}.to.rap-db.tsv",
     output:
         best_hit = "results/id_converter/{variety}.to.rap-db.best-hit.tsv",
+    script:
+        "scripts/id_converter.R"
+
+
+rule diamond_blastx_to_msu:
+    input:
+        longest_cds = "results/longest_cds/{variety}.longest_cds.fa",
+        d = "../msu/results/os.msu.dmnd"
+    output:
+        o = "results/diamond/{variety}.to.msu.tsv",
+    shell:
+        '''
+        diamond blastx \
+            -d {input.d} \
+            -q {input.longest_cds} \
+            -o {output.o} \
+            --very-sensitive
+        '''
+
+
+rule id_converter_to_msu:
+    input:
+        diamond_output = "results/diamond/{variety}.to.msu.tsv",
+    output:
+        best_hit = "results/id_converter/{variety}.to.msu.best-hit.tsv",
     script:
         "scripts/id_converter.R"
 

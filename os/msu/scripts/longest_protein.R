@@ -7,9 +7,11 @@ config <- list(
 
 raw_protein <- readAAStringSet(config$raw_protein)
 
-names(raw_protein) <- names(raw_protein) |> sub("Os([^t]+)t([^-]+)-.*", "Os\\1g\\2", x=_, perl=T)
+names(raw_protein) <- names(raw_protein) |> sub("([^.]+)\\..*", "\\1", x=_, perl=T)
 
-longest_protein <- split(raw_protein, names(raw_protein)) |>
+protein <- raw_protein[grep("^LOC", names(raw_protein)),]
+
+longest_protein <- split(protein, names(protein)) |>
     lapply(function(x) {x[order(width(x), decreasing=T)][1]}) |>
     unname() |> 
     do.call(c, args=_)
