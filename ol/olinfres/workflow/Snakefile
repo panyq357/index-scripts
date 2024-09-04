@@ -1,0 +1,101 @@
+rule all:
+    input:
+        star_index = "results/star_index",
+        fai = "results/genome/ol.make.genome.fa.fai",
+        dict = "results/genome/ol.make.genome.dict",
+        baw_index = ["results/genome/ol.make.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        best_hit = "results/id_converter/ol.to.os.rap-db.best-hit.tsv",
+
+
+rule make_genome:
+    input:
+        raw = "rawdata/OL_genome.fa"
+    output:
+        genome = "results/genome/ol.make.genome.fa"
+    script:
+        "scripts/make_genome.R"
+
+
+rule make_gtf:
+    input:
+        gff_dif = "rawdata/gff"
+    output:
+        gtf = "results/gtf/ol.make.gtf"
+    script:
+        "scripts/make_gtf.R"
+
+
+rule star_index:
+    input:
+        genome = "results/genome/ol.make.genome.fa",
+        gtf = "results/gtf/ol.make.gtf"
+    output:
+        star_index = directory("results/star_index")
+    threads:
+        20
+    shell:
+        '''
+        STAR \
+            --runThreadN {threads} \
+            --runMode genomeGenerate \
+            --genomeDir {output.star_index} \
+            --genomeFastaFiles {input.genome} \
+            --sjdbGTFfile {input.gtf} \
+            --genomeSAindexNbases 13  # Adjusted base on STAR's warning.
+        '''
+
+
+rule genome_index:
+    input:
+        genome = "results/genome/ol.make.genome.fa",
+    output:
+        fai = "results/genome/ol.make.genome.fa.fai",
+        dict = "results/genome/ol.make.genome.dict"
+    shell:
+        '''
+        samtools faidx {input.genome}
+        gatk CreateSequenceDictionary -R {input.genome}
+        '''
+
+rule bwa_index:
+    input:
+        "results/genome/ol.make.genome.fa"
+    output:
+        ["results/genome/ol.make.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        "bwa index {input}"
+
+
+rule longest_aa:
+    input:
+        raw_aa = "rawdata/OL_proteins.fa"
+    output:
+        longest_aa = "results/longest_aa.fa"
+    script:
+        "scripts/longest_aa.R"
+
+
+rule diamond_blastx:
+    input:
+        longest_aa = "results/longest_aa.fa",
+        d = "../../os/rap-db/results/os.rap-db.dmnd"
+    output:
+        o = "results/diamond/ol.to.os.rap-db.tsv",
+    shell:
+        '''
+        diamond blastp \
+            -d {input.d} \
+            -q {input.longest_aa} \
+            -o {output.o} \
+            --very-sensitive
+        '''
+
+rule id_converter:
+    input:
+        diamond_output = "results/diamond/ol.to.os.rap-db.tsv",
+    output:
+        best_hit = "results/id_converter/ol.to.os.rap-db.best-hit.tsv",
+    script:
+        "scripts/id_converter.R"
+
+

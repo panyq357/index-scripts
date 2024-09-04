@@ -1,52 +1,13 @@
-from pathlib import Path
 
-configfile: "config.yaml"
+include: "rules/download.smk"
+
 
 rule all:
     input:
-        "rawdata/TAIR10_functional_descriptions_20140331.txt",
-        "rawdata/gene_aliases_20140331.txt",
-
+        "rawdata/TAIR10_functional_descriptions",
         ["results/genome/at.tair10.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
         "results/star_index",
-
         "results/custom_bed/transcript.bed"
-
-
-rule download_genome:
-    output:
-        "rawdata/TAIR10_chr_all.fas.gz"
-    params:
-        url = config["download_links"]["genome"]
-    shell:
-        "cd rawdata ; wget {params.url}"
-
-
-rule download_gtf:
-    output:
-        "rawdata/Araport11_GTF_genes_transposons.current.gtf.gz"
-    params:
-        url = config["download_links"]["gtf"]
-    shell:
-        "cd rawdata ; wget {params.url}"
-
-
-rule download_alias:
-    output:
-        alias = "rawdata/gene_aliases_20140331.txt"
-    params:
-        url = config["download_links"]["alias"]
-    shell:
-        "cd rawdata ; aria2c {params.url}"
-
-
-rule download_description:
-    output:
-        description = "rawdata/TAIR10_functional_descriptions_20140331.txt"
-    params:
-        url = config["download_links"]["description"]
-    shell:
-        "cd rawdata ; aria2c {params.url}"
 
 
 rule genome:
@@ -75,9 +36,9 @@ rule bwa:
 
 rule make_gtf:
     input:
-        raw_gtf = "rawdata/Araport11_GTF_genes_transposons.current.gtf.gz"
+        raw_gff = "rawdata/TAIR10_GFF3_genes.gff"
     output:
-        new_gtf = "results/gtf/at.araport11.make.gtf"
+        new_gtf = "results/gtf/at.tair10.make.gtf"
     script:
         "scripts/make_gtf.R"
 
@@ -85,7 +46,7 @@ rule make_gtf:
 rule star_index:
     input:
         fa = "results/genome/at.tair10.genome.fa",
-        gtf = "results/gtf/at.araport11.make.gtf"
+        gtf = "results/gtf/at.tair10.make.gtf"
     output:
         star_index = directory("results/star_index")
     threads:
@@ -103,7 +64,7 @@ rule star_index:
 
 rule custom_bed:
     input:
-        gtf = "results/gtf/at.araport11.make.gtf"
+        gtf = "results/gtf/at.tair10.make.gtf"
     output:
         transcript = "results/custom_bed/transcript.bed"
     script:
