@@ -1,31 +1,28 @@
+library(rtracklayer)
 library(GenomicRanges)
 
 config <- list(
     gtf = snakemake@input$gtf,
-    tx = snakemake@output$transcript
-)
 
-save.image()
+    transcript = snakemake@output$transcript,
+    gene = snakemake@output$gene
+)
 
 main <- function() {
 
-    gtf <- rtracklayer::import(config$gtf)
-    tx <- gtf[gtf$type == "transcript",]
+    gtf <- import(config$gtf)
 
-    write.table(gr_to_bed_df(tx), file=config$tx, quote=F, sep="\t", row.names=F, col.names=F)
+    transcript <- gtf[gtf$type == "transcript",]
+    mcols(transcript)$name <- transcript$transcript_id
+    mcols(transcript) <- mcols(transcript)["name"]  # Keep only name in mcols, since rtracklayer can't export other columns.
 
-}
+    gene <- gtf[gtf$type == "gene",]
+    mcols(gene)$name <- gene$gene_id
+    mcols(gene) <- mcols(gene)["name"]
 
-gr_to_bed_df <- function(gr) {
-    df <- data.frame(
-        seqnames=seqnames(gr),
-        starts=start(gr)-1,
-        ends=end(gr),
-        names=rep(".", length(gr)),
-        scores=rep(".", length(gr)),
-        strands=strand(gr)
-    )
-    return(df)
+    export(transcript, config$transcript, format="bed")
+    export(gene, config$gene, format="bed")
+
 }
 
 main()

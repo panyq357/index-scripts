@@ -66,7 +66,8 @@ rule custom_bed:
     input:
         gtf = "results/gtf/at.tair10.make.gtf"
     output:
-        transcript = "results/custom_bed/transcript.bed"
+        transcript = "results/custom_bed/transcript.bed",
+        gene = "results/custom_bed/gene.bed"
     script:
         "scripts/custom_bed.R"
 
