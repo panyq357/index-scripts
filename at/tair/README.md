@@ -11,3 +11,4 @@ snakemake all --dag | dot -Tsvg > dag.svg
 ```
 
 ![dag.svg](dag.svg)
+

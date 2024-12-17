@@ -1,0 +1,16 @@
+rule all:
+    input:
+        pathway_to_description = "results/ath_pathway/pathway_to_description.tsv",
+        pathway_to_gene = "results/ath_pathway/pathway_to_gene.tsv"
+
+
+rule ath_pathway:
+    output:
+        pathway_to_description = "results/ath_pathway/pathway_to_description.tsv",
+        pathway_to_gene = "results/ath_pathway/pathway_to_gene.tsv"
+    params:
+        organism_code = "ath",
+        omit_str_in_description = " - Arabidopsis thaliana (thale cress)"
+    script:
+        "scripts/get_kegg_pathway.py"
+

@@ -8,8 +8,11 @@ rule osa_pathway:
     output:
         pathway_to_description = "results/osa_pathway/pathway_to_description.tsv",
         pathway_to_gene = "results/osa_pathway/pathway_to_gene.tsv"
+    params:
+        organism_code = "osa",
+        omit_str_in_description = " - Oryza sativa japonica (Japanese rice)"
     script:
-        "scripts/osa_pathway.py"
+        "scripts/get_kegg_pathway.py"
 
 
 rule pathway_to_rapdb:
