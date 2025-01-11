@@ -7,6 +7,7 @@ rule all:
     input:
         anno = "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz",
         bwa = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        bowtie2 = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2"]],
         star_index = "results/star_index",
         annovar = ["results/osdb/OS_refGene.txt", "results/osdb/OS_refGeneMrna.fa"],
         id_converter = "results/id_converter.txt",
@@ -15,7 +16,8 @@ rule all:
         subread_index = "results/subread_index/subread_index.files",
         hisat2_index = "results/hisat2_index/hisat2_index.1.ht2",
         kasalath = "rawdata/kasalath_genome/all.fasta",
-        longest_protein = "results/longest_protein.fa"
+        longest_protein = "results/longest_protein.fa",
+        twobit = "results/genome/os.rap-db.genome.ooc"
 
 rule genome:
     input:
@@ -38,6 +40,16 @@ rule bwa:
         ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
     shell:
         "bwa index {input}"
+
+
+rule bowtie2:
+    input:
+        "results/genome/os.rap-db.genome.fa"
+    output:
+        ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2"]]
+    shell:
+        "bowtie2-build {input} {input}"
+
 
 rule make_gtf:
     input:
@@ -123,3 +135,27 @@ rule custom_bed:
     script:
         "scripts/custom_bed.R"
 
+
+rule make_2bit_chrom_sizes:
+    input:
+        fa = "{prefix}.fa",
+    output:
+        twobit = "{prefix}.2bit",
+        chrom_sizes = "{prefix}.chrom.sizes"
+    shell:
+        '''
+        faToTwoBit {input.fa} {output.twobit}
+        twoBitInfo {output.twobit} stdout | sort -k2,2nr > {output.chrom_sizes}
+        '''
+
+rule make_blat_ooc:
+    input:
+        "{prefix}.2bit"
+    output:
+        "{prefix}.ooc"
+    params:
+        repMatch = 100
+    shell:
+        '''
+        blat {input} /dev/null /dev/null -tileSize=11 -makeOoc={output} -repMatch={params.repMatch}
+        '''

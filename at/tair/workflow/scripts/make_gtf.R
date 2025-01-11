@@ -40,14 +40,9 @@ exon$gene_id <- tx_to_gene(exon$transcript_id)
 exon$type <- "exon"
 exon <- subset(exon, select = c("source", "type", "score", "phase", "gene_id", "transcript_id"))
 
-gene <- subset(gff, type == "gene")
-gene$transcript_id <- NA
-gene$gene_id <- gene$ID
-gene <- subset(gene, select = c("source", "type", "score", "phase", "gene_id", "transcript_id"))
+new_gtf <- c(transcript, CDS, five_prime_utr, three_prime_utr, exon)
 
-new_gtf <- c(transcript, CDS, five_prime_utr, three_prime_utr, exon, gene)
-
-new_gtf$type <- factor(new_gtf$type, levels=c("gene", "transcript", "exon", "five_prime_utr", "CDS", "three_prime_utr"))
+new_gtf$type <- factor(new_gtf$type, levels=c("transcript", "exon", "five_prime_utr", "CDS", "three_prime_utr"))
 
 new_gtf <- sort(new_gtf, by = ~ type, decreasing=F)
 new_gtf <- sort(new_gtf, by = ~ width, decreasing=T)
@@ -60,6 +55,5 @@ new_gtf$gene_biotype[is_gene_coding] <- "protein_coding"
 is_tx_coding <- !is.na(match(as.character(new_gtf$transcript_id), as.character(CDS$transcript_id)))
 new_gtf$transcript_biotype <- "ncRNA"
 new_gtf$transcript_biotype[is_tx_coding] <- "protein_coding"
-new_gtf$transcript_biotype[new_gtf$type == "gene"] <- NA
 
 rtracklayer::export(new_gtf, config$new_gtf, format="gtf")

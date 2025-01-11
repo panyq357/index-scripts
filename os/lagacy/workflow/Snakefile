@@ -1,0 +1,10 @@
+include: "rules/misc.smk"
+include: "rules/build4.smk"
+include: "rules/build5.smk"
+
+
+rule all:
+    input:
+        expand("results/genome/os.{name}.genome.fa.fai", name=["build4", "build5"]),
+        expand("results/custom_bed/{name}_gene.bed", name=["build4", "build5"])
+
