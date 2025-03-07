@@ -1,3 +1,5 @@
+from pathlib import Path
+
 
 rule download_genome:
     output:
@@ -8,15 +10,18 @@ rule download_genome:
         "cd rawdata ; wget {params.url}"
 
 
+gff_url = config["download_links"]["gff"]
+
 rule download_gff:
     output:
         locus = "rawdata/IRGSP-1.0_representative/locus.gff",
         transcripts = "rawdata/IRGSP-1.0_representative/transcripts.gff",
         transcripts_exon = "rawdata/IRGSP-1.0_representative/transcripts_exon.gff"
     params:
-        url = config["download_links"]["gff"]
+        url = gff_url,
+        file = Path(gff_url).name
     shell:
-        "cd rawdata ; wget {params.url} ; tar -xzf IRGSP-1.0_representative_2023-09-07.tar.gz"
+        "cd rawdata ; wget {params.url} ; tar -xzf {params.file}"
 
 
 rule download_kasalath:
@@ -30,7 +35,7 @@ rule download_kasalath:
 
 rule download_annotation:
     output:
-        "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz"
+        Path("rawdata") / Path(config["download_links"]["annotation"]).name
     params:
         url = config["download_links"]["annotation"]
     shell:
@@ -39,7 +44,7 @@ rule download_annotation:
 
 rule download_id_converter:
     output:
-        "rawdata/RAP-MSU_2023-09-07.txt.gz"
+        Path("rawdata") / Path(config["download_links"]["id_converter"]).name
     params:
         url = config["download_links"]["id_converter"]
     shell:
@@ -48,10 +53,9 @@ rule download_id_converter:
 
 rule download_protein:
     output:
-        "rawdata/IRGSP-1.0_protein_2024-07-12.fasta.gz"
+        Path("rawdata") / Path(config["download_links"]["protein"]).name
     params:
-        outdir = "rawdata",
-        url = "https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_protein_2024-07-12.fasta.gz"
+        url = config["download_links"]["protein"]
     shell:
-        "mkdir -p {params.outdir} ; cd {params.outdir} ; wget {params.url}"
+        "cd rawdata ; wget {params.url}"
 

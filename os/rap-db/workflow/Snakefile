@@ -1,15 +1,16 @@
 configfile: "config.yaml"
 
+
 include: "rules/download.smk"
 include: "rules/id_converter.smk"
 
+
 rule all:
     input:
-        anno = "rawdata/IRGSP-1.0_representative_annotation_2023-09-07.tsv.gz",
+        anno = "rawdata/IRGSP-1.0_representative_annotation_2024-07-12.tsv.gz",
         bwa = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
         bowtie2 = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2"]],
         star_index = "results/star_index",
-        annovar = ["results/osdb/OS_refGene.txt", "results/osdb/OS_refGeneMrna.fa"],
         id_converter = "results/id_converter.txt",
         diamond = "results/os.rap-db.dmnd",
         transcript = "results/custom_bed/transcript.bed",
@@ -17,7 +18,7 @@ rule all:
         hisat2_index = "results/hisat2_index/hisat2_index.1.ht2",
         kasalath = "rawdata/kasalath_genome/all.fasta",
         longest_protein = "results/longest_protein.fa",
-        twobit = "results/genome/os.rap-db.genome.ooc"
+
 
 rule genome:
     input:
@@ -79,6 +80,7 @@ rule star_index:
             --genomeSAindexNbases 13  # Adjusted base on STAR's warning.
         '''
 
+
 rule subread_index:
     input:
         fa = "results/genome/os.rap-db.genome.fa"
@@ -90,6 +92,7 @@ rule subread_index:
         '''
         subread-buildindex -o {params.prefix} {input.fa}
         '''
+
 
 rule hisat2_index:
     input:
@@ -103,28 +106,6 @@ rule hisat2_index:
         hisat2-build {input.fa} {params.prefix}
         '''
 
-rule annovar:
-    input:
-        fa = "results/genome/os.rap-db.genome.fa",
-        gtf = "results/gtf/os.rap-db.make.gtf"
-    output:
-        refGene = "results/annovar_osdb/OS_refGene.txt",
-        refGeneMrna = "results/osdb/annovar_OS_refGeneMrna.fa"
-    shell:
-        '''
-        mkdir -p osdb
-        gtfToGenePred \
-            -genePredExt \
-            -ignoreGroupsWithoutExons \
-            {input.gtf} \
-            {output.refGene}
-        retrieve_seq_from_fasta.pl \
-            --format refGene \
-            --seqfile {input.fa} \
-            {output.refGene} \
-            --out {output.refGeneMrna}
-        '''
-
 
 rule custom_bed:
     input:
@@ -134,28 +115,3 @@ rule custom_bed:
         gene = "results/custom_bed/gene.bed"
     script:
         "scripts/custom_bed.R"
-
-
-rule make_2bit_chrom_sizes:
-    input:
-        fa = "{prefix}.fa",
-    output:
-        twobit = "{prefix}.2bit",
-        chrom_sizes = "{prefix}.chrom.sizes"
-    shell:
-        '''
-        faToTwoBit {input.fa} {output.twobit}
-        twoBitInfo {output.twobit} stdout | sort -k2,2nr > {output.chrom_sizes}
-        '''
-
-rule make_blat_ooc:
-    input:
-        "{prefix}.2bit"
-    output:
-        "{prefix}.ooc"
-    params:
-        repMatch = 100
-    shell:
-        '''
-        blat {input} /dev/null /dev/null -tileSize=11 -makeOoc={output} -repMatch={params.repMatch}
-        '''
