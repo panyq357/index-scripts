@@ -1,0 +1,15 @@
+{
+  "id": "IRGSP-1.0",
+  "name": "O. sativa (IRGSP-1.0)",
+  "fastaURL": "./os.rap-db.genome.fa.gz",
+  "indexURL": "./os.rap-db.genome.fa.gz.fai",
+  "chromosomeOrder": ["chr01", "chr02", "chr03", "chr04", "chr05", "chr06", "chr07", "chr08", "chr09", "chr10", "chr11", "chr12"],
+  "tracks": [
+      {
+          "name": "RAP-DB Transcripts",
+          "format": "gff",
+          "url": "./os.rap-db.transcripts.sorted.gff.gz",
+          "indexURL": "./os.rap-db.transcripts.sorted.gff.gz.tbi"
+      }
+  ]
+}

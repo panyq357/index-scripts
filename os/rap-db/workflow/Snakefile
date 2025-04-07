@@ -3,6 +3,7 @@ configfile: "config.yaml"
 
 include: "rules/download.smk"
 include: "rules/id_converter.smk"
+include: "rules/igv.smk"
 
 
 rule all:
@@ -18,6 +19,7 @@ rule all:
         hisat2_index = "results/hisat2_index/hisat2_index.1.ht2",
         kasalath = "rawdata/kasalath_genome/all.fasta",
         longest_protein = "results/longest_protein.fa",
+        igv = "results/igv/os.rap-db.genome.json"
 
 
 rule genome:
@@ -115,3 +117,5 @@ rule custom_bed:
         gene = "results/custom_bed/gene.bed"
     script:
         "scripts/custom_bed.R"
+
+
