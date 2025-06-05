@@ -1,0 +1,88 @@
+rule all:
+    input:
+        multiext("results/genome/bn.bnir.zs11.v0.genome.fa.gz", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        "results/custom_bed/bn.ZS11.v0.transcript.bed", "results/custom_bed/bn.ZS11.v0.gene.bed"
+
+
+rule download_genome:
+    output:
+        "rawdata/Brassica_napus.ZS11.v0.genome.fa.gz"
+    params:
+        url = "https://yanglab.hzau.edu.cn/static/bnir/assets//genomic_sequence/BnIRData/AACC.Brassica_napus/ZS11/v0/Brassica_napus.ZS11.v0.genome.fa.gz"
+    shell:
+        '''
+        curl -L {params.url} > {output}
+        '''
+
+
+rule download_gff:
+    output:
+        "rawdata/Brassica_napus.ZS11.v0.gene.gff3.gz"
+    params:
+        url = "https://yanglab.hzau.edu.cn/static/bnir/assets//genomic_sequence/BnIRData/AACC.Brassica_napus/ZS11/v0/Brassica_napus.ZS11.v0.gene.gff3.gz"
+    shell:
+        '''
+        curl -L {params.url} > {output}
+        '''
+
+
+rule genome_index:
+    input:
+        "rawdata/Brassica_napus.ZS11.v0.genome.fa.gz"
+    output:
+        fa = "results/genome/bn.bnir.zs11.v0.genome.fa.gz",
+        fai = "results/genome/bn.bnir.zs11.v0.genome.fa.gz.fai",
+        dict = "results/genome/bn.bnir.zs11.v0.genome.dict"
+    shell:
+        '''
+        gzip -dc {input} | bgzip > {output.fa}
+        samtools faidx {output.fa}
+        gatk CreateSequenceDictionary -R {output.fa}
+        '''
+
+
+rule bwa_index:
+    input:
+        "results/genome/bn.bnir.zs11.v0.genome.fa.gz"
+    output:
+        multiext("results/genome/bn.bnir.zs11.v0.genome.fa.gz", ".amb", ".ann", ".bwt", ".pac", ".sa")
+    shell:
+        "bwa index {input}"
+
+
+rule make_gtf:
+    input:
+        "rawdata/Brassica_napus.ZS11.v0.gene.gff3.gz"
+    output:
+        "results/gtf/bn.ZS11.v0.make.gtf"
+    script:
+        "scripts/make_gtf.R"
+
+
+rule bgzip:
+    input:
+        "{prefix}"
+    output:
+        "{prefix}.gz"
+    shell:
+        "bgzip {input} > {output}"
+
+
+rule tabix_index:
+    input:
+        "{prefix}.gz"
+    output:
+        "{prefix}.gz.tbi"
+    shell:
+        "tabix {input}"
+
+
+rule custom_bed:
+    input:
+        gtf = "results/gtf/bn.ZS11.v0.make.gtf"
+    output:
+        transcript = "results/custom_bed/bn.ZS11.v0.transcript.bed",
+        gene = "results/custom_bed/bn.ZS11.v0.gene.bed"
+    script:
+        "scripts/custom_bed.R"
+

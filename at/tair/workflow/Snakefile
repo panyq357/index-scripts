@@ -7,7 +7,8 @@ rule all:
         "rawdata/TAIR10_functional_descriptions",
         ["results/genome/at.tair10.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
         "results/star_index",
-        "results/custom_bed/transcript.bed"
+        "results/custom_bed/transcript.bed",
+        "results/at.tair10.dmnd"
 
 
 rule genome:
@@ -70,4 +71,24 @@ rule custom_bed:
         gene = "results/custom_bed/gene.bed"
     script:
         "scripts/custom_bed.R"
+
+
+rule longest_pep:
+    input:
+        "rawdata/TAIR10_pep_20110103_representative_gene_model"
+    output:
+        "results/longest_pep/at.tair10.longest_pep.fa"
+    script:
+        "scripts/longest_pep.R"
+
+
+rule diamond_makedb:
+    input:
+        "results/longest_pep/at.tair10.longest_pep.fa"
+    output:
+        "results/at.tair10.dmnd"
+    params:
+        d = "results/at.tair10"
+    shell:
+        "diamond makedb --in {input} -d {params.d}"
 

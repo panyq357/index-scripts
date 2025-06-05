@@ -52,9 +52,20 @@ rule bowtie2:
         "bowtie2-build {input} {input}"
 
 
+rule cat_gff:
+    input:
+        "rawdata/IRGSP-1.0_representative/locus.gff",
+        "rawdata/IRGSP-1.0_representative/transcripts_exon.gff",
+        "rawdata/IRGSP-1.0_representative/transcripts.gff"
+    output:
+        temp("resources/cat.gff")
+    shell:
+        "cat {input} > {output}"
+
+
 rule make_gtf:
     input:
-        "rawdata/IRGSP-1.0_representative/transcripts.gff"
+        "resources/cat.gff"
     output:
         "results/gtf/os.rap-db.make.gtf"
     script:

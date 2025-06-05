@@ -1,7 +1,8 @@
 rule all:
     input:
         ["results/genome/msa.ZhongmuNo.1.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
-        "results/gtf/msa.ZhongmuNo.1.make.gtf"
+        "results/diamond/ZhongmuNo.1.to.tair10.tsv",
+        "results/ZhongmuNo.1.to.tair10.best-hit.tsv",
 
 
 rule download:
@@ -21,7 +22,7 @@ rule unzip:
         "rawdata/ZhongmuNo.1.annotation.pathway",
         "rawdata/ZhongmuNo.1.annotation.pfam",
         "rawdata/ZhongmuNo.1.cds.fasta",
-        "rawdata/ZhongmuNo.1.cds.long.fasta",
+        "rawdata/ZhongmuNo.1.cds.long.fasta",  # Longest CDS
         "rawdata/ZhongmuNo.1_genome.fasta.gz",
         "rawdata/ZhongmuNo.1.gff",
         "rawdata/ZhongmuNo.1.pros.fasta",
@@ -65,3 +66,30 @@ rule make_gtf:
         "results/gtf/msa.ZhongmuNo.1.make.gtf"
     script:
         "scripts/make_gtf.R"
+
+
+
+rule diamond_blastx_to_tair:
+    input:
+        longest_cds = "rawdata/ZhongmuNo.1.cds.long.fasta",
+        d = "../../at/tair/results/at.tair10.dmnd"
+    output:
+        o = "results/diamond/ZhongmuNo.1.to.tair10.tsv",
+    shell:
+        '''
+        diamond blastx \
+            -d {input.d} \
+            -q {input.longest_cds} \
+            -o {output.o} \
+            --very-sensitive
+        '''
+
+rule id_converter_to_tair:
+    input:
+        diamond_output = "results/diamond/ZhongmuNo.1.to.tair10.tsv"
+    output:
+        best_hit = "results/ZhongmuNo.1.to.tair10.best-hit.tsv",
+    script:
+        "scripts/id_converter.R"
+
+
