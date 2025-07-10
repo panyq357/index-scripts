@@ -1,0 +1,23 @@
+rule all:
+    input:
+        "results/id_table.txt",
+        "results/iwgsc_cs_refseq_v2.1.longest_cds.fasta"
+
+
+rule id_table:
+    params:
+        url = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/018/294/505/GCF_018294505.1_IWGSC_CS_RefSeq_v2.1/GCF_018294505.1_IWGSC_CS_RefSeq_v2.1_genomic.gtf.gz"
+    output:
+        "results/iwgsc_cs_refseq_v2.1.id_table.txt"
+    script:
+        "scripts/id_table.R"
+
+
+rule longest_cds:
+    params:
+        url = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/018/294/505/GCF_018294505.1_IWGSC_CS_RefSeq_v2.1/GCF_018294505.1_IWGSC_CS_RefSeq_v2.1_cds_from_genomic.fna.gz"
+    output:
+        "results/iwgsc_cs_refseq_v2.1.longest_cds.fasta"
+    script:
+        "scripts/longest_cds.R"
+

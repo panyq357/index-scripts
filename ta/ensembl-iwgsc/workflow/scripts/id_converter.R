@@ -11,4 +11,3 @@ split_order <- with(df, split(Identity, Query)) |> lapply(order, decreasing=TRUE
 out <- df[split_order == 1, c("Query", "Target", "Identity")]
 
 write.table(out, snakemake@output$best_hit, row.names=FALSE, col.names=F, sep="\t", quote=F)
-

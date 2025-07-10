@@ -1,0 +1,112 @@
+include: "rules/id_converter.smk"
+
+
+rule all:
+    input:
+        "results/id_converter/ensembl-iwgsc.to.rap-db.best-hit.tsv",
+        "results/id_converter/ensembl-iwgsc.to.msu.best-hit.tsv",
+        multiext("rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        "results/star_index"
+
+
+rule download_genome:
+    output:
+        fa = "rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz",
+        fai = "rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz.fai",
+        gzi = "rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz.gzi"
+    params:
+        fa = "https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-61/fasta/triticum_aestivum/dna_index/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz",
+        fai = "https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-61/fasta/triticum_aestivum/dna_index/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz.fai",
+        gzi = "https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-61/fasta/triticum_aestivum/dna_index/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz.gzi",
+    shell:
+        """
+        cd rawdata
+        wget {params.fa}
+        wget {params.fai}
+        wget {params.gzi}
+        """
+
+rule download_gtf:
+    output:
+        gtf = "rawdata/Triticum_aestivum.IWGSC.61.gtf.gz"
+    params:
+        gtf = "https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-61/gtf/triticum_aestivum/Triticum_aestivum.IWGSC.61.gtf.gz"
+    shell:
+        '''
+        cd rawdata
+        wget {params.gtf}
+        '''
+
+
+rule extract_splice_sites_and_exons:
+    input:
+        "rawdata/Triticum_aestivum.IWGSC.61.gtf"
+    output:
+        exons = "results/hisat2/exons.tsv",
+        splicesites = "results/hisat2/splicesites.tsv"
+    shell:
+        '''
+        hisat2_extract_exons.py {input} > {output.exons}
+        hisat2_extract_splice_sites.py {input} > {output.splicesites}
+        '''
+
+
+rule hisat2_index_for_rna:
+    input:
+        fa = "rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa",
+        exons = "results/hisat2/exons.tsv",
+        splicesites = "results/hisat2/splicesites.tsv"
+    output:
+        "results/hisat2/ta.hisat2_index_for_rna.1.ht2"
+    params:
+        out = "results/hisat2/ta.hisat2_index_for_rna"
+    shell:
+        '''
+        hisat2-build \
+            --ss {input.splicesites} \
+            --exon {input.splicesites} \
+            {input.fa} \
+            {params.out}
+        '''
+
+
+rule gunzip:
+    input:
+        fa = "rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz",
+        gtf = "rawdata/Triticum_aestivum.IWGSC.61.gtf.gz"
+    output:
+        fa = temp("rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa"),
+        gtf = temp("rawdata/Triticum_aestivum.IWGSC.61.gtf")
+    shell:
+        '''
+        pigz -p 20 -dc {input.fa} > {output.fa}
+        pigz -p 20 -dc {input.gtf} > {output.gtf}
+        '''
+
+
+rule star_index:
+    input:
+        fa = "rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa",
+        gtf = "rawdata/Triticum_aestivum.IWGSC.61.gtf"
+    output:
+        star_index = directory("results/star_index")
+    threads:
+        20
+    shell:
+        '''
+        STAR \
+            --runThreadN {threads} \
+            --runMode genomeGenerate \
+            --genomeDir {output.star_index} \
+            --genomeFastaFiles {input.fa} \
+            --sjdbGTFfile {input.gtf} \
+            --limitGenomeGenerateRAM 128000000000
+        '''
+
+rule bwa_index:
+    input:
+        fa = "rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz"
+    output:
+        multiext("rawdata/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz", ".amb", ".ann", ".bwt", ".pac", ".sa")
+    shell:
+        "bwa index {input}"
