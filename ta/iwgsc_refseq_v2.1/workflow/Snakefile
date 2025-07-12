@@ -1,0 +1,70 @@
+
+include: "rules/download.smk"
+
+
+rule all:
+    input:
+        multiext("results/genome/iwgsc_refseq_v2.1.fa.gz", ".bwt", ".pac", ".ann", ".amb", ".sa"),
+        "results/salmon_index",
+        "results/gtf/iwgsc_refseq_v2.1.make.gtf",
+        "results/gene_info.tsv"
+
+
+rule make_genome:
+    input:
+        "rawdata/iwgsc_refseqv2.1_assembly.fa.zip"
+    output:
+        fa = "results/genome/iwgsc_refseq_v2.1.fa.gz",
+        fai = "results/genome/iwgsc_refseq_v2.1.fa.gz.fai",
+        dict = "results/genome/iwgsc_refseq_v2.1.dict"
+    shell:
+        '''
+        unzip -p {input} iwgsc_refseqv2.1_assembly.fa | bgzip > {output.fa}
+        samtools faidx {output.fa}
+        gatk CreateSequenceDictionary -R {output.fa}
+        '''
+
+
+rule salmon_index:
+    input:
+        "rawdata/iwgsc_refseqv2.1_gene_annotation_200916.zip"
+    output:
+        fa = temp("resources/iwgsc_refseqv2.1_annotation_200916_HC_mrna.fasta"),
+        index = directory("results/salmon_index")
+    shell:
+        '''
+        unzip -p {input} iwgsc_refseqv2.1_gene_annotation_200916/iwgsc_refseqv2.1_annotation_200916_HC_mrna.fasta > {output.fa}
+        salmon index -t {output.fa} -i {output.index}
+        '''
+
+
+rule make_gtf:
+    input:
+        "rawdata/iwgsc_refseqv2.1_gene_annotation_200916.zip"
+    output:
+        temp_dir = temp(directory("resources/make_gtf_temp")),
+        gtf = "results/gtf/iwgsc_refseq_v2.1.make.gtf"
+    script:
+        "scripts/make_gtf.R"
+
+
+rule bwa_index:
+    input:
+        "results/genome/iwgsc_refseq_v2.1.fa.gz"
+    output:
+        multiext("results/genome/iwgsc_refseq_v2.1.fa.gz", ".bwt", ".pac", ".ann", ".amb", ".sa")
+    shell:
+        '''
+        bwa index {input}
+        '''
+
+
+rule make_gene_info:  # TODO
+    input:
+        "rawdata/iwgsc_refseqv2.1_functional_annotation.zip"
+    output:
+        "results/gene_info.tsv"
+    script:
+        "scripts/make_gene_info.R"
+
+# rule make_enrichment_data:  # TODO

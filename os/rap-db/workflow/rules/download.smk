@@ -59,3 +59,12 @@ rule download_protein:
     shell:
         "cd rawdata ; wget {params.url}"
 
+
+rule download_transcript:
+    output:
+        Path("rawdata") / Path(config["download_links"]["transcript"]).name
+    params:
+        url = config["download_links"]["transcript"]
+    shell:
+        "cd rawdata ; wget {params.url}"
+

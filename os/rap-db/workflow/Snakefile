@@ -18,7 +18,8 @@ rule all:
         hisat2_index = "results/hisat2_index/hisat2_index.1.ht2",
         kasalath = "rawdata/kasalath_genome/all.fasta",
         longest_protein = "results/longest_protein.fa",
-        gene_info = "results/gene_info.tsv.gz"
+        gene_info = "results/gene_info.tsv.gz",
+        salmon_index = "results/salmon_index"
 
 
 rule genome:
@@ -138,3 +139,12 @@ rule get_gene_info:
         "results/gene_info.tsv.gz"
     script:
         "scripts/get_gene_info.R"
+
+
+rule salmon_index:
+    input:
+        rules.download_transcript.output
+    output:
+        directory("results/salmon_index")
+    shell:
+        "salmon index -t {input} -i {output}"

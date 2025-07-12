@@ -1,7 +1,8 @@
 rule all:
     input:
         multiext("results/genome/bn.bnir.zs11.v0.genome.fa.gz", ".amb", ".ann", ".bwt", ".pac", ".sa"),
-        "results/custom_bed/bn.ZS11.v0.transcript.bed", "results/custom_bed/bn.ZS11.v0.gene.bed"
+        "results/custom_bed/bn.ZS11.v0.transcript.bed", "results/custom_bed/bn.ZS11.v0.gene.bed",
+        "results/gene_info.tsv.gz"
 
 
 rule download_genome:
@@ -86,3 +87,18 @@ rule custom_bed:
     script:
         "scripts/custom_bed.R"
 
+
+rule scrape_annotation:
+    output:
+        protected("results/bnir_scrape_annotation.csv")
+    script:
+        "scripts/scrape_annotation.py"
+
+
+rule clean_gene_info:
+    input:
+        "results/bnir_scrape_annotation.csv"
+    output:
+        "results/gene_info.tsv.gz"
+    script:
+        "scripts/clean_gene_info.R"

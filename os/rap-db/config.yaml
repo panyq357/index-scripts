@@ -6,4 +6,4 @@ download_links:
   annotation: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_representative_annotation_2024-07-12.tsv.gz
   id_converter: https://rapdb.dna.affrc.go.jp/download/archive/RAP-MSU_2024-07-12.txt.gz
   protein: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_protein_2024-07-12.fasta.gz
-
+  transcript: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_transcript_2025-03-19.fasta.gz
