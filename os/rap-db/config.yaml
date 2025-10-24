@@ -1,9 +1,9 @@
 
 download_links:
   genome: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_genome.fasta.gz
-  gff: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_representative_2024-07-12.tar.gz
+  gff: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_representative_2025-03-19.tar.gz
   kasalath: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/kasalath_genome.tar.gz
-  annotation: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_representative_annotation_2024-07-12.tsv.gz
-  id_converter: https://rapdb.dna.affrc.go.jp/download/archive/RAP-MSU_2024-07-12.txt.gz
-  protein: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_protein_2024-07-12.fasta.gz
+  annotation: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_representative_annotation_2025-03-19.tsv.gz
+  id_converter: https://rapdb.dna.affrc.go.jp/download/archive/RAP-MSU_2025-03-19.txt.gz
+  protein: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_protein_2025-03-19.fasta.gz
   transcript: https://rapdb.dna.affrc.go.jp/download/archive/irgsp1/IRGSP-1.0_transcript_2025-03-19.fasta.gz

@@ -7,19 +7,16 @@ include: "rules/id_converter.smk"
 
 rule all:
     input:
-        anno = "rawdata/IRGSP-1.0_representative_annotation_2024-07-12.tsv.gz",
-        bwa = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
-        bowtie2 = ["results/genome/os.rap-db.genome.fa" + suffix for suffix in [".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2"]],
+        bwa = "results/genome/os.rap-db.genome.fa.sa",
+        bowtie2 = "results/genome/os.rap-db.genome.fa.1.bt2",
+        make_gtf = "results/gtf/os.rap-db.make.gtf",
+        make_gff = "results/gff/os.rap-db.make.gff",
         star_index = "results/star_index",
-        id_converter = "results/id_converter.txt",
-        diamond = "results/os.rap-db.dmnd",
-        transcript = "results/custom_bed/transcript.bed",
         subread_index = "results/subread_index/subread_index.files",
         hisat2_index = "results/hisat2_index/hisat2_index.1.ht2",
-        kasalath = "rawdata/kasalath_genome/all.fasta",
-        longest_protein = "results/longest_protein.fa",
-        gene_info = "results/gene_info.tsv.gz",
-        salmon_index = "results/salmon_index"
+        custom_bed = "results/custom_bed/transcript.bed",
+        make_gene_info = "results/gene_info.tsv.gz",
+        salmon_index = "results/salmon_index",
 
 
 rule genome:
@@ -35,6 +32,7 @@ rule genome:
         samtools faidx {output.fa}
         gatk CreateSequenceDictionary -R {output.fa}
         '''
+
 
 rule bwa:
     input:
@@ -60,7 +58,7 @@ rule cat_gff:
         "rawdata/IRGSP-1.0_representative/transcripts_exon.gff",
         "rawdata/IRGSP-1.0_representative/transcripts.gff"
     output:
-        temp("resources/cat.gff")
+        "resources/cat.gff"
     shell:
         "cat {input} > {output}"
 
@@ -72,6 +70,15 @@ rule make_gtf:
         "results/gtf/os.rap-db.make.gtf"
     script:
         "scripts/make_gtf.R"
+
+
+rule make_gff:
+    input:
+        "resources/cat.gff"
+    output:
+        "results/gff/os.rap-db.make.gff"
+    script:
+        "scripts/make_gff.R"
 
 
 rule star_index:
@@ -132,13 +139,13 @@ rule custom_bed:
         "scripts/custom_bed.R"
 
 
-rule get_gene_info:
+rule make_gene_info:
     input:
-        "rawdata/IRGSP-1.0_representative_annotation_2024-07-12.tsv.gz"
+        rules.download_annotation.output
     output:
         "results/gene_info.tsv.gz"
     script:
-        "scripts/get_gene_info.R"
+        "scripts/make_gene_info.R"
 
 
 rule salmon_index:
