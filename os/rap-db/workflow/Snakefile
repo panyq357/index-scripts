@@ -17,6 +17,7 @@ rule all:
         custom_bed = "results/custom_bed/transcript.bed",
         make_gene_info = "results/gene_info.tsv.gz",
         salmon_index = "results/salmon_index",
+        igv_genome = "results/igv_genome/os.rap-db.genome.json"
 
 
 rule genome:
@@ -133,6 +134,7 @@ rule custom_bed:
         fa = "results/genome/os.rap-db.genome.fa"  # for seqlengths
     output:
         transcript = "results/custom_bed/transcript.bed",
+        gene = "results/custom_bed/gene.bed",
         exon = "results/custom_bed/exon.bed",
         upstream_3kb = "results/custom_bed/upstream_3kb.bed",
     script:
@@ -155,3 +157,19 @@ rule salmon_index:
         directory("results/salmon_index")
     shell:
         "salmon index -t {input} -i {output}"
+
+
+rule make_igv_genome:
+    input:
+        fa = "results/genome/os.rap-db.genome.fa",       # IGV can only read ungzipped FASTA
+        fai = "results/genome/os.rap-db.genome.fa.fai",
+        gff = "results/gff/os.rap-db.make.gff"           # IGV's search only function with ungzipped GFF/GTF
+    output:
+        outdir = directory("results/igv_genome"),
+        json = "results/igv_genome/os.rap-db.genome.json"
+    params:
+        id =  "IRGSP-1.0",
+        name = "O. sativa (IRGSP-1.0)",
+        chromosome_order = ["chr01", "chr02", "chr03", "chr04", "chr05", "chr06", "chr07", "chr08", "chr09", "chr10", "chr11", "chr12"]
+    script:
+        "scripts/make_igv_genome.py"

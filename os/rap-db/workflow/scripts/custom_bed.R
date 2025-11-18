@@ -10,19 +10,25 @@ mcols(transcript)$name <- transcript$transcript_id
 mcols(transcript) <- mcols(transcript)["name"]
 export(transcript, snakemake@output$transcript, format="bed")
 
+gene <- subset(gtf, type == "gene")
+mcols(gene)$name <- gene$gene_id
+mcols(gene) <- mcols(gene)["name"]
+export(gene, snakemake@output$gene, format="bed")
+
 exon <- subset(gtf, type == "exon")
 # Assign exon number
 mcols(exon)$exon_number <- split(exon, exon$transcript_id) |>
   lapply(function(tx_exon) {
-  cat(sprintf("\rAssign exon number for %s", tx_exon$transcript_id[1]))
-  if (all(strand(tx_exon) == "+")) {
-    return(order(start(tx_exon)))
-  } else if (all(strand(tx_exon) == "-")){
-    return(order(end(tx_exon), decreasing = TRUE))
-  } else {
-    return(NA)
-  }
-}) |> unlist()
+    cat(sprintf("\rAssign exon number for %s", tx_exon$transcript_id[1]))
+    if (all(strand(tx_exon) == "+")) {
+      return(order(start(tx_exon)))
+    } else if (all(strand(tx_exon) == "-")) {
+      return(order(end(tx_exon), decreasing = TRUE))
+    } else {
+      return(NA)
+    }
+  }) |>
+  unlist()
 cat("\n")
 mcols(exon)$name <- with(mcols(exon), sprintf("%s.exon%d", transcript_id, exon_number))
 mcols(exon) <- mcols(exon)["name"]
