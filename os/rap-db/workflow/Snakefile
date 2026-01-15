@@ -18,7 +18,8 @@ rule all:
         make_gene_info = "results/gene_info.tsv.gz",
         salmon_index = "results/salmon_index",
         id_converter = "results/id_converter.txt",
-        igv_genome = "results/igv_genome/os.rap-db.genome.json"
+        igv_genome = "results/igv_genome/os.rap-db.genome.json",
+        dmnd = "results/os.rap-db.dmnd"
 
 
 rule genome:

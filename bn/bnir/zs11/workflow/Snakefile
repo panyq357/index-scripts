@@ -1,8 +1,9 @@
 rule all:
     input:
-        multiext("results/genome/bn.bnir.zs11.v0.genome.fa.gz", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        multiext("results/genome/bn.bnir.zs11.v0.genome.fa", ".amb", ".ann", ".bwt", ".pac", ".sa"),
         "results/custom_bed/bn.ZS11.v0.transcript.bed", "results/custom_bed/bn.ZS11.v0.gene.bed",
-        "results/gene_info.tsv.gz"
+        "results/gene_info.tsv.gz",
+        json = "results/igv_genome/bn.bnir.zs11.v0.genome.json"
 
 
 rule download_genome:
@@ -31,12 +32,12 @@ rule genome_index:
     input:
         "rawdata/Brassica_napus.ZS11.v0.genome.fa.gz"
     output:
-        fa = "results/genome/bn.bnir.zs11.v0.genome.fa.gz",
-        fai = "results/genome/bn.bnir.zs11.v0.genome.fa.gz.fai",
+        fa = "results/genome/bn.bnir.zs11.v0.genome.fa",
+        fai = "results/genome/bn.bnir.zs11.v0.genome.fa.fai",
         dict = "results/genome/bn.bnir.zs11.v0.genome.dict"
     shell:
         '''
-        gzip -dc {input} | bgzip > {output.fa}
+        gzip -dc {input} > {output.fa}
         samtools faidx {output.fa}
         gatk CreateSequenceDictionary -R {output.fa}
         '''
@@ -44,9 +45,9 @@ rule genome_index:
 
 rule bwa_index:
     input:
-        "results/genome/bn.bnir.zs11.v0.genome.fa.gz"
+        "results/genome/bn.bnir.zs11.v0.genome.fa"
     output:
-        multiext("results/genome/bn.bnir.zs11.v0.genome.fa.gz", ".amb", ".ann", ".bwt", ".pac", ".sa")
+        multiext("results/genome/bn.bnir.zs11.v0.genome.fa", ".amb", ".ann", ".bwt", ".pac", ".sa")
     shell:
         "bwa index {input}"
 
@@ -102,3 +103,28 @@ rule clean_gene_info:
         "results/gene_info.tsv.gz"
     script:
         "scripts/clean_gene_info.R"
+
+
+rule make_gff:
+    input:
+        "rawdata/Brassica_napus.ZS11.v0.gene.gff3.gz"
+    output:
+        "results/make_gff/bn.bnir.zs11.v0.gene.gff"
+    script:
+        "scripts/make_gff.R"
+
+
+rule make_igv_genome:
+    input:
+        fa = "results/genome/bn.bnir.zs11.v0.genome.fa",       # IGV can only read ungzipped FASTA
+        fai = "results/genome/bn.bnir.zs11.v0.genome.fa.fai",
+        gff = "results/make_gff/bn.bnir.zs11.v0.gene.gff"           # IGV's search only function with ungzipped GFF/GTF
+    output:
+        outdir = directory("results/igv_genome"),
+        json = "results/igv_genome/bn.bnir.zs11.v0.genome.json"
+    params:
+        id =  "ZS11-v0",
+        name = "B. napus (ZS11-v0)",
+#         chromosome_order = ["chr01", "chr02", "chr03", "chr04", "chr05", "chr06", "chr07", "chr08", "chr09", "chr10", "chr11", "chr12"]
+    script:
+        "scripts/make_igv_genome.py"

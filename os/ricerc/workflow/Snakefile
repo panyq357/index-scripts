@@ -1,6 +1,6 @@
 
 
-cultivar = ["ZH11", "9311"]
+cultivar = ["ZH11", "9311", "KY131"]
 
 
 rule all:
