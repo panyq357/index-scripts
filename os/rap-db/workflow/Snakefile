@@ -9,7 +9,7 @@ rule all:
     input:
         bwa = "results/genome/os.rap-db.genome.fa.sa",
         bowtie2 = "results/genome/os.rap-db.genome.fa.1.bt2",
-        make_gtf = "results/gtf/os.rap-db.make.gtf",
+        make_gtf = ["results/gtf/os.rap-db.make.gtf", "results/gtf/os.rap-db.make.no_chr.gtf"],
         make_gff = "results/gff/os.rap-db.make.gff",
         star_index = "results/star_index",
         subread_index = "results/subread_index/subread_index.files",
@@ -175,3 +175,14 @@ rule make_igv_genome:
         chromosome_order = ["chr01", "chr02", "chr03", "chr04", "chr05", "chr06", "chr07", "chr08", "chr09", "chr10", "chr11", "chr12"]
     script:
         "scripts/make_igv_genome.py"
+
+
+rule replace_chromosome:
+    input:
+        "{prefix}.{suffix}"
+    output:
+        "{prefix}.no_chr.{suffix}"
+    wildcard_constraints:
+        suffix = '[^.]+'
+    shell:
+        r"""sed -E 's/\bchr0*([0-9]+)\b/\1/g' {input} > {output}"""
