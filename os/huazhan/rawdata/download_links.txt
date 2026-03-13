@@ -1,0 +1,3 @@
+https://download.cncb.ac.cn/gwh/Plants/Oryza_sativa_HZ.genomic.fa_GWHAORT00000000/GWHAORT00000000.genome.fasta.gz
+https://download.cncb.ac.cn/gwh/Plants/Oryza_sativa_HZ.genomic.fa_GWHAORT00000000/GWHAORT00000000.gff.gz
+https://download.cncb.ac.cn/gwh/Plants/Oryza_sativa_HZ.genomic.fa_GWHAORT00000000/GWHAORT00000000.CDS.fasta.gz

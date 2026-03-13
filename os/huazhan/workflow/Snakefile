@@ -1,0 +1,96 @@
+rule all:
+    input:
+        bwa_index = ["results/genome/Huazhan.make.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]],
+        gtf = "results/gtf/Huazhan.make.gtf",
+        longest_cds = "results/longest_cds/Huazhan.longest_cds.fa",
+        rap_best_hit = "results/id_converter/Huazhan.to.rap-db.best-hit.tsv",
+        msu_best_hit = "results/id_converter/Huazhan.to.msu.best-hit.tsv",
+        
+
+rule download:
+    output:
+        genome = "rawdata/GWHAORT00000000.genome.fasta.gz",
+        gff = "rawdata/GWHAORT00000000.gff.gz",
+        cds = "rawdata/GWHAORT00000000.CDS.fasta.gz",
+    shell:
+        """
+        cd rawdata ; aria2c -i download_links.txt -c
+        """
+
+
+rule make_genome_fasta:
+    input:
+        "rawdata/GWHAORT00000000.genome.fasta.gz",
+    output:
+        genome = "results/genome/Huazhan.make.fa",
+        chr_id_converter = "results/genome/chr_id_converter.txt"
+    script:
+        "scripts/get_chromosome_names.R"
+        
+
+rule bwa_index:
+    input:
+        genome = "results/genome/Huazhan.make.fa",
+    output:
+        bwa_index = ["results/genome/Huazhan.make.fa" + suffix for suffix in [".amb", ".ann", ".bwt", ".pac", ".sa"]]
+    shell:
+        "bwa index {input}"
+        
+
+rule make_gtf:
+    input:
+        gff = "rawdata/GWHAORT00000000.gff.gz",
+        chr_id_converter = "results/genome/chr_id_converter.txt"
+    output:
+        gtf = "results/gtf/Huazhan.make.gtf"
+    script:
+        "scripts/make_gtf.R"
+
+
+rule longest_cds:
+    input:
+        cds = "rawdata/GWHAORT00000000.CDS.fasta.gz",
+    output:
+        longest_cds = "results/longest_cds/Huazhan.longest_cds.fa",
+    script:
+        "scripts/longest_cds.R"
+
+
+rule diamond_blastx_to_rapdb:
+    input:
+        longest_cds = "results/longest_cds/Huazhan.longest_cds.fa",
+        d = "../rap-db/results/os.rap-db.dmnd"
+    output:
+        o = "results/diamond/Huazhan.to.rap-db.tsv",
+    shell:
+        '''
+        diamond blastx \
+            -d {input.d} \
+            -q {input.longest_cds} \
+            -o {output.o} \
+            --very-sensitive
+        '''
+
+
+rule id_converter_to_rapdb:
+    input:
+        diamond_output = "results/diamond/Huazhan.to.rap-db.tsv",
+    output:
+        best_hit = "results/id_converter/Huazhan.to.rap-db.best-hit.tsv",
+    script:
+        "scripts/id_converter.R"
+
+
+use rule diamond_blastx_to_rapdb as diamond_blastx_to_msu with:
+    input:
+        longest_cds = "results/longest_cds/Huazhan.longest_cds.fa",
+        d = "../msu/results/os.msu.dmnd"
+    output:
+        o = "results/diamond/Huazhan.to.msu.tsv",
+
+
+use rule id_converter_to_rapdb as id_converter_to_msu with:
+    input:
+        diamond_output = "results/diamond/Huazhan.to.msu.tsv",
+    output:
+        best_hit = "results/id_converter/Huazhan.to.msu.best-hit.tsv",
